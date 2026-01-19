@@ -13,7 +13,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
     public AnimatorHelper secondaryMenuAndGameViewAH;   // has animations and controls the size of the Secondary Menu and Game View GameObjects
 
     [SerializeField] private bool secondaryMenuHidden;
-    [SerializeField] private bool doingAnimation;
 
     protected override void OnStart()
     {
@@ -24,7 +23,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
         if (secondaryMenuAndGameViewAH == null)
             ErrorOut.Throw(this, "secondaryMenuAndGameViewAH null");
 
-        doingAnimation = false;
         secondaryMenuHidden = true;
     }
 
@@ -39,7 +37,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
             if (selectedObj != null && prevSelectedObj == null)
             {
                 _selectedTabGrp = tabGroup;
-                doingAnimation = true;
 
                 DebugOut.Log(this, $"triggering Reveal! at time: {Time.timeAsDouble}", debugDisabled);
                 tabGroup.ActivateTabGroup();                        // the tab group class will call this class's `OnTabSelected()` function
@@ -51,7 +48,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
             // hide the secondary menu tab & panel when there is no selected object (ie selected the same Scene Object)
             else if (selectedObj == null)
             {
-                doingAnimation = true;
                 DebugOut.Log(this, $"triggering hide! at time: {Time.timeAsDouble}", debugDisabled);
                 tabGroup.CheckAnimationTrigger("Hide");
                 secondaryMenuTabAH.CheckAnimationTrigger("Hide");
@@ -74,7 +70,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
 
         tabGroup.ExitTabGroup();
         _selectedTabGrp = null;
-        doingAnimation = false;
     }
 
     public override void OnRevealAnimationFinish()
@@ -106,10 +101,10 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
 
     public override void OnTabSelected(ChangedTabButton button)
     {
-        string str = "- OnTabSelected() -";
-
         if (button.prevTabButton == null && button.newTabButton == null)    // should never be called
-            WarningOut.Log(this, "something wrong???");
+            WarningOut.Log(this, "something wrong!!!");
+
+        string str = "- OnTabSelected() -";
 
         if (button.prevTabButton != null && button.newTabButton != null)
         {
@@ -119,7 +114,7 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
             // Note: If you see the `swapToObject` of the prev button instantly disapearing when the same tab button is selected,
             // its because the button's Deselect() is called on it and sets its active status to false, so that's why.
         }
-        // no new button was pressed, hide the secondary tab menu
+        // no new button was pressed, hide the secondary tab menu (ie selected the same button)
         else if (button.prevTabButton != null && button.newTabButton == null)
         {
             DebugOut.Log(this, $"{str} null button", debugDisabled);
@@ -133,11 +128,6 @@ public class TabGrpManagerSecondaryObjMenu : TabGroupManagerBase
         }
 
     }
-
-    //public override void SameTabSelected(TabButton button)
-    //{
-    //    // close the secondary menu area!
-    //}
 
     //public void OnSelectedObject(Component component, object data)
     //{

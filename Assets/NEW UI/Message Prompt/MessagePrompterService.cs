@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class MessagePrompter : MonoBehaviour
+public class MessagePrompterService : MonoBehaviour
 {
 
     [SerializeField] private GameObject promptContainerPrefab;   // use to display messages to user

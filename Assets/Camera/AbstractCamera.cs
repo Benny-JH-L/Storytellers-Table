@@ -6,15 +6,11 @@ using UnityEngine.InputSystem;
 [System.Serializable]
 public abstract class AbstractCamera : MonoBehaviour
 {
-    //private static Rect _viewPortRect;
-
-    protected Vector3 origin = Vector3.zero;
-
-    public static CameraData cameraData;    // i could make seprate camera datas for the orbit and map cams, so instead of static it would be perinstance.
-    //public static GameObject screenSpaceGameObject;  // space occupied by the actual game and not ScrenSpaceUI
     public static List<AbstractCamera> cameraList = new();
 
     [SerializeField] private CameraManager _camManager;
+    [SerializeField] protected CameraData cameraData;
+    protected Vector3 origin = Vector3.zero;
 
     /// <summary>
     /// camera instance used.
@@ -34,6 +30,7 @@ public abstract class AbstractCamera : MonoBehaviour
     {
         _camManager = GetComponentInParent<CameraManager>();
         cam = GetComponent<Camera>();
+        cameraData = ScriptableObject.CreateInstance<CameraData>();
 
         if (cameraData == null)
             cameraData = ScriptableObject.CreateInstance<CameraData>();
@@ -139,11 +136,6 @@ public abstract class AbstractCamera : MonoBehaviour
     {
         cam.orthographic = enableOrtho;
     }
-
-    //public static void SetCameraData(CameraData data)
-    //{
-    //    cameraData = data;
-    //}
 
     /// <summary>
     /// Zoom's the camera's Perspective FOV, or Ortho size with respect to mouse scroll input.

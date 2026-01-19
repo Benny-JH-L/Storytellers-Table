@@ -10,8 +10,8 @@ public class CameraData : ScriptableObject
     [Header("Map")]
     [Range(0.25f, 4)]
     public float mapMoveSensitivity = 2f;
-    [Range(50, 300)]    // tentative
-    public float mapZoomInOutSensitivity = 200f;
+    [Range(300, 5000)]
+    public float mapZoomInOutSensitivity = 2000f;
 
     // orbit camera
     [Header("Orbit")]
@@ -19,7 +19,8 @@ public class CameraData : ScriptableObject
     public float initYRotatation = 45f;     // phi
     public float initOrbitDistance = 30f;
     public float orbitSens = 30f;
-    public float orbitDistanceZoomSens = 2f;
+    [Range(2, 10)]
+    public float orbitDistanceZoomSens = 5f;
     public float orbitMinDist = 10f;
     public float orbitMaxDist = 100f;
     public float orbitMinVerticalClamp = -20f;

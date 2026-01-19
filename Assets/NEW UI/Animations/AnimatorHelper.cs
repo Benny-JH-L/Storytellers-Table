@@ -5,7 +5,7 @@ public class AnimatorHelper : MonoBehaviour
 {
     [SerializeField] private Animator animator;     // animations for what ever 
     public GameEventSO gameEvent;
-    public bool debugDisabled = false;
+    public bool debugDisabled;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     //void Start()
@@ -25,6 +25,8 @@ public class AnimatorHelper : MonoBehaviour
 
     private void Awake()    //  occures before Start() -- is needed
     {
+        debugDisabled = true;
+
         if (animator == null)
             animator = GetComponent<Animator>();
 

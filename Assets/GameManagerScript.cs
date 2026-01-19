@@ -33,7 +33,7 @@ public class GameManagerScript : MonoBehaviour
     public GameObject inanimateAppearancePrefab;
 
     [SerializeField] private double timeSinceLastLeftClick;
-    [SerializeField] private MessagePrompter msgPrompter;
+    [SerializeField] private MessagePrompterService msgPrompter;
     [SerializeField] [Range(10,100)] private int yOffsetForPrompt = 25;
 
 

@@ -9,7 +9,7 @@ public class PromptContainer : AbstractUI
     [SerializeField] private TTRPG_Text_New text;
     [SerializeField] private Image backgroundImg;   // makes the text easier to see (not neccessary)
     [SerializeField] private AnimatorHelper animatorHelper;   // animations for this container
-    [SerializeField] private MessagePrompter parentPrompter;  // instantiated by this class
+    [SerializeField] private MessagePrompterService parentPrompter;  // instantiated by this class
 
     public override void Configure()
     {
@@ -21,12 +21,12 @@ public class PromptContainer : AbstractUI
         text = GetComponentInChildren<TTRPG_Text_New>();
         backgroundImg = GetComponentInChildren<Image>();
         animatorHelper = GetComponent<AnimatorHelper>();
-        parentPrompter = GetComponentInParent<MessagePrompter>();
+        parentPrompter = GetComponentInParent<MessagePrompterService>();
     }
 
     private void Start()
     {
-        parentPrompter = GetComponentInParent<MessagePrompter>();   // needed
+        parentPrompter = GetComponentInParent<MessagePrompterService>();   // needed
 
     }
 
