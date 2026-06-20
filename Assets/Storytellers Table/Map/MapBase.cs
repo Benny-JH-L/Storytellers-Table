@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 
 // Resource: https://www.youtube.com/watch?v=EPaSmQ2vtek
 
-
 public abstract class MapBase : MonoBehaviour
 {
     [Header("Grid Settings")]
@@ -16,24 +15,16 @@ public abstract class MapBase : MonoBehaviour
     public float innerSize = 0f;
     public float height = 1f;
     public bool isFlatTopped;
-    public Material material;
+    public Material material; // default material of map
 
     [Header("Other")]
     public string mapID;
-    private Dictionary<HexCoord, GameObject> _tiles;
+    [SerializeField] private AdjacencyList _adjacencyList;
 
     // shared stuff: convert mouse pixel pos -> hex, etc... 
 
-
-    public MapBase(string id)
-    {
-        outerSize = 1f;
-        innerSize = 0f;
-        height = 1f;
-        mapID = id;
-    }
-
     public abstract void Setup();
+    public abstract TileBase CreateTileDataInstance(HexCoord hexCoord);
 
     private void Awake()
     {
@@ -58,7 +49,7 @@ public abstract class MapBase : MonoBehaviour
     /// <summary>
     /// Rebuilds the map
     /// </summary>
-    [ContextMenu("Rebuild Map")] // need to right click the script, and select
+    [ContextMenu("Rebuild Map")] // nIn the Unity inspector, right click the map script, and select this option
     public void RebuildMap()
     {
         _LayoutMap();
@@ -76,58 +67,26 @@ public abstract class MapBase : MonoBehaviour
                 Debug.Log($"Hit Point: {hit.point} | Computed Axial: {hexCoord}");
 
                 // To verify it maps to an actual tile object in your dictionary:
-                if (_tiles != null && _tiles.TryGetValue(hexCoord, out GameObject hitTile))
+                if (_adjacencyList != null && _adjacencyList.TryGetValue(hexCoord, out GameObject hitTile))
                 {
-                    Debug.Log($"Successfully clicked on object: {hitTile.name} at Key: {hexCoord}");
+                    //Debug.Log($"Successfully clicked on object: {hitTile.name} at Key: {hexCoord}");
+                    if (hitTile.TryGetComponent<TileComponent>(out TileComponent tileComp))
+                    {
+                        Debug.Log($"Clicked tile data type: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
+                    }
                 }
                 else
                 {
                     Debug.LogWarning($"Hit registered at {hexCoord}, but no matching tile key was found in the dictionary.");
+
+                    // place a tile at an empty space
+                    if (Keyboard.current.leftShiftKey.isPressed)
+                    {
+                        Debug.Log($"Placing new tile at {hexCoord}.");
+                        GameObject newTile = _GenerateTile(hexCoord);
+                    }
+
                 }
-
-                // need to give the hex renderer a collider (cause u can't click on it kek)... and need to get the axial coordainte then based on that i need to 
-                // find the position on the world map for it, then place down a tile there.
-                // (i dont think i need to do this): also may need to edit how layout map creates the map, so it conforms to an axial coordinate system
-            }
-        }
-    }
-
-
-    /// <summary>
-    /// [DEPRECATED]
-    /// </summary>
-    private void LayoutMapOLD()
-    {
-        if (_tiles == null)
-            _tiles = new Dictionary<HexCoord, GameObject>();
-
-        _ClearTiles();
-
-        for (int y = 0; y < mapSize.y; y++)
-        {
-            for (int x = 0; x < mapSize.x; x++)
-            {
-                // determine the true axial coodinates based on grid orientation
-                int q = isFlatTopped ? x : x - (y + (y & 1)) / 2;
-                int r = isFlatTopped ? y - (x + (x & 1)) / 2 : y;
-                HexCoord hexCoord = new HexCoord(q, r);
-
-                GameObject tile = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer));
-                tile.transform.position = _GetPositionForHexFromCoordinate(new Vector2Int(x, y));
-
-                HexRenderer hexRenderer = tile.GetComponent<HexRenderer>();
-                hexRenderer.outerSize = outerSize;
-                hexRenderer.innerSize = innerSize;
-                hexRenderer.height = height;
-                hexRenderer.isFlatTopped = isFlatTopped;
-                hexRenderer.SetMaterial(material);
-                hexRenderer.DrawMesh();
-                hexRenderer.SetHexText(hexCoord);
-
-                tile.transform.SetParent(transform, true);
-
-                // store the tile
-                _tiles[hexCoord] = tile;
             }
         }
     }
@@ -137,10 +96,10 @@ public abstract class MapBase : MonoBehaviour
     /// </summary>
     private void _LayoutMap()
     {
-        if (_tiles == null)
-            _tiles = new Dictionary<HexCoord, GameObject>();
+        if (_adjacencyList == null)
+            _adjacencyList = new AdjacencyList();
 
-        _ClearTiles();
+        ClearTiles();
 
         // Generate a clean rectangular bound using axial loops
         for (int r = 0; r < mapSize.y; r++)
@@ -162,26 +121,49 @@ public abstract class MapBase : MonoBehaviour
                     hexCoord = new HexCoord(qFlat, rFlat + offsetFlat);
                 }
 
-                GameObject tile = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer));
-                tile.transform.position = _GetPositionFromAxial(hexCoord);
-
-                HexRenderer hexRenderer = tile.GetComponent<HexRenderer>();
-                hexRenderer.outerSize = outerSize;
-                hexRenderer.innerSize = innerSize;
-                hexRenderer.height = height;
-                hexRenderer.isFlatTopped = isFlatTopped;
-                hexRenderer.SetMaterial(material);
-                hexRenderer.DrawMesh();
-                hexRenderer.SetHexText(hexCoord);
-
-                tile.transform.SetParent(transform, true);
-                _tiles[hexCoord] = tile;
+                GameObject tile = _GenerateTile(hexCoord);
             }
         }
     }
 
     /// <summary>
-    /// Computes the exact 3D world position using structural basis vector matrix transformations.
+    /// Generates a hex tile at the specified hex axial, q & r, coordinate, and places it at the converted world space position, 
+    /// then adds it to the map's adjacency list.
+    /// </summary>
+    /// <param name="hexCoord"></param>
+    /// <returns></returns>
+    private GameObject _GenerateTile(HexCoord hexCoord)
+    {
+        // Create GameObject with HexRenderer and TileComponent
+        GameObject tile = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer), typeof(TileComponent));
+        tile.transform.position = _GetPositionFromAxial(hexCoord);
+
+        // Set up HexRenderer
+        HexRenderer hexRenderer = tile.GetComponent<HexRenderer>();
+        hexRenderer.outerSize = outerSize;
+        hexRenderer.innerSize = innerSize;
+        hexRenderer.height = height;
+        hexRenderer.isFlatTopped = isFlatTopped;
+        hexRenderer.SetMaterial(material);
+        hexRenderer.DrawMesh();
+        hexRenderer.SetHexText(hexCoord);
+
+        // Set up and bridge the tile data context
+        TileBase tileData = CreateTileDataInstance(hexCoord);
+        TileComponent tileComponent = tile.GetComponent<TileComponent>();
+        tileComponent.Setup(hexCoord, tileData);
+
+        // parent the tile to the map GameObject
+        tile.transform.SetParent(transform, true);  
+
+        // add the tile to the adjacency map
+        _adjacencyList[hexCoord] = tile;
+
+        return tile;
+    }
+
+    /// <summary>
+    /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.
     /// This removes all floating point tracking gaps and anchors the origin natively at (0,0,0).
     /// </summary>
     private Vector3 _GetPositionFromAxial(HexCoord coord)
@@ -210,14 +192,9 @@ public abstract class MapBase : MonoBehaviour
     /// <summary>
     /// Clears and destroys all map tiles on this map
     /// </summary>
-    private void _ClearTiles()
+    public void ClearTiles()
     {
-        foreach (KeyValuePair<HexCoord, GameObject> pair in _tiles)
-        {
-            if (pair.Value != null)
-                Destroy(pair.Value);
-        }
-        _tiles.Clear();
+        _adjacencyList.Clear();
     }
 
     /// <summary>
@@ -274,19 +251,19 @@ public abstract class MapBase : MonoBehaviour
         float size = outerSize;
         float fracQ, fracR;
         float worldX = worldPos.x;
-        float worldZ = -worldPos.z; // Un-invert the layout space inversion to correctly match back to matrix operations
+        float worldZ = -worldPos.z; // apply layout space restoration up front
 
         if (!isFlatTopped)
         {
             // Pointy-top matrix inversion transformation
-            fracQ = (Mathf.Sqrt(3f) / 3f * worldX - 1f / 3f * -worldZ) / size;
-            fracR = (2f / 3f * -worldZ) / size;
+            fracQ = (Mathf.Sqrt(3f) / 3f * worldX - 1f / 3f * worldZ) / size;
+            fracR = (2f / 3f * worldZ) / size;
         }
         else
         {
             // Flat-top matrix inversion transformation
             fracQ = (2f / 3f * worldX) / size;
-            fracR = (-1f / 3f * worldX + MathF.Sqrt(3f) / 3f * -worldZ) / size;
+            fracR = (-1f / 3f * worldX + MathF.Sqrt(3f) / 3f * worldZ) / size;
         }
 
         // Convert to 3D cube coordinates to do robust rounding (ensuring q + r + s = 0)
@@ -314,21 +291,5 @@ public abstract class MapBase : MonoBehaviour
 
         return new HexCoord(q, r);
     }
-
-
-    ///// <summary>
-    ///// Convert from axial Hex coordinate to cube coordinate
-    ///// </summary>
-    ///// <param name="hexCoord"></param>
-    ///// <returns></returns>
-    public CubeCoord AxialToCube(HexCoord hexCoord) => new CubeCoord(hexCoord.q, hexCoord.r);
-
-
-    /// <summary>
-    /// Convert from cube coordinate to axial hex coordinate
-    /// </summary>
-    /// <param name="cubeCoord"></param>
-    /// <returns></returns>
-    public HexCoord CubeToAxial(CubeCoord cubeCoord) => new HexCoord(cubeCoord.q, cubeCoord.r);
 
 }

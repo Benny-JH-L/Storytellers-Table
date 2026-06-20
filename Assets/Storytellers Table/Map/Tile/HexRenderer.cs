@@ -1,7 +1,5 @@
 ﻿
-using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -34,7 +32,6 @@ public class HexRenderer : MonoBehaviour
     private List<Face> _faces;  // faces of triangles
 
     [Header("Hex")]
-    //[SerializeField] private HexCoord _hexCoord;
     [SerializeField] private Material _material;
     public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
     public float outerSize;     // size of the outer hexagon
