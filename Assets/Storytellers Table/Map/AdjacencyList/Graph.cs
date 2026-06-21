@@ -6,18 +6,18 @@ using UnityEngine;
 /// <summary>
 /// Class to store tiles, and represents map as an adjacency list.
 /// </summary>
-public class AdjacencyList
+public class Graph
 {
     private Dictionary<HexCoord, GameObject> _tiles; // stores the tile located at a hex coordinate.
 
-    public AdjacencyList()
+    public Graph()
     {
         _tiles = new Dictionary<HexCoord, GameObject>();
     }
 
     /// <summary>
-    /// To get, `AdjacencyList[HexCoord]`, returns a GameObject if it exists, null otherwise.
-    /// To set, `AdjacencyList[HexCoord] = value`, value must be a game object with a TileComponent (& HexRenderer).
+    /// To get, `Graph[HexCoord]`, returns a GameObject if it exists, null otherwise.
+    /// To set, `Graph[HexCoord] = value`, value must be a game object with a TileComponent (& HexRenderer).
     /// </summary>
     /// <param name="hexCoord"></param>
     /// <returns></returns>

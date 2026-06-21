@@ -19,7 +19,7 @@ public abstract class MapBase : MonoBehaviour
 
     [Header("Other")]
     public string mapID;
-    [SerializeField] private AdjacencyList _adjacencyList;
+    [SerializeField] private Graph _graph;
 
     // strictly for the Unity inspector
     [Header("OnValidate()")]
@@ -62,7 +62,7 @@ public abstract class MapBase : MonoBehaviour
     public void ReDrawTileMesh()
     {
         Debug.Log("Re drawing tile mesh...");
-        _adjacencyList.ReDrawTileMesh();
+        _graph.ReDrawTileMesh();
     }
 
     public void Update()
@@ -77,7 +77,7 @@ public abstract class MapBase : MonoBehaviour
                 Debug.Log($"Hit Point: {hit.point} | Computed Axial: {hexCoord}");
 
                 // To verify it maps to an actual tile object in your dictionary:
-                if (_adjacencyList != null && _adjacencyList.TryGetValue(hexCoord, out GameObject hitTile))
+                if (_graph != null && _graph.TryGetValue(hexCoord, out GameObject hitTile))
                 {
                     //Debug.Log($"Successfully clicked on object: {hitTile.name} at Key: {hexCoord}");
                     if (hitTile.TryGetComponent<TileComponent>(out TileComponent tileComp))
@@ -106,8 +106,8 @@ public abstract class MapBase : MonoBehaviour
     /// </summary>
     private void _LayoutMap()
     {
-        if (_adjacencyList == null)
-            _adjacencyList = new AdjacencyList();
+        if (_graph == null)
+            _graph = new Graph();
 
         ClearTiles();
 
@@ -167,7 +167,7 @@ public abstract class MapBase : MonoBehaviour
         tile.transform.SetParent(transform, true);  
 
         // add the tile to the adjacency map
-        _adjacencyList[hexCoord] = tile;
+        _graph[hexCoord] = tile;
 
         return tile;
     }
@@ -204,7 +204,7 @@ public abstract class MapBase : MonoBehaviour
     /// </summary>
     public void ClearTiles()
     {
-        _adjacencyList.Clear();
+        _graph.Clear();
     }
 
     /// <summary>
