@@ -21,14 +21,18 @@ public abstract class MapBase : MonoBehaviour
     public string mapID;
     [SerializeField] private AdjacencyList _adjacencyList;
 
-    // shared stuff: convert mouse pixel pos -> hex, etc... 
+    // strictly for the Unity inspector
+    [Header("OnValidate()")]
+    [SerializeField] private bool toggleOnValidate;
 
+    // shared stuff: convert mouse pixel pos -> hex, etc...
     public abstract void Setup();
     public abstract TileBase CreateTileDataInstance(HexCoord hexCoord);
 
     private void Awake()
     {
         Setup();
+        toggleOnValidate = false;
     }
 
     private void OnEnable()
@@ -36,23 +40,29 @@ public abstract class MapBase : MonoBehaviour
         _LayoutMap();
     }
 
-
-    //private void OnValidate() // use the rebuild map instead!
-    //{
-    //    if (Application.isPlaying)
-    //    {
-    //        //Debug.Log("yo2");
-    //        LayoutMap();
-    //    }
-    //}
+    private void OnValidate()
+    {
+        if (toggleOnValidate && Application.isPlaying)
+        {
+            // what ever you want...
+        }
+    }
 
     /// <summary>
     /// Rebuilds the map
     /// </summary>
-    [ContextMenu("Rebuild Map")] // nIn the Unity inspector, right click the map script, and select this option
+    [ContextMenu("Rebuild Map")] // In the Unity inspector, right click the map script, and select this option
     public void RebuildMap()
     {
+        Debug.Log($"Re building map of size q={mapSize.x}, r={mapSize.y}...");
         _LayoutMap();
+    }
+
+    [ContextMenu("Re Draw Hex Tile Mesh")] // In the Unity inspector, right click the map script, and select this 
+    public void ReDrawTileMesh()
+    {
+        Debug.Log("Re drawing tile mesh...");
+        _adjacencyList.ReDrawTileMesh();
     }
 
     public void Update()

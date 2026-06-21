@@ -14,11 +14,12 @@ public class MapBaseEditor : Editor
         //DrawDefaultInspector(); // draws every thing in the base editor
 
         GUILayout.Space(10);
+        
+        MapBase map = (MapBase)target;
 
         if (GUILayout.Button("Rebuild Map"))
         {
-            MapBase map = (MapBase)target;
-
+            
             Undo.RegisterFullObjectHierarchyUndo(
                 map.gameObject,
                 "Rebuild Map"
@@ -27,6 +28,11 @@ public class MapBaseEditor : Editor
             map.RebuildMap();
 
             EditorUtility.SetDirty(map);
+        }
+
+        if (GUILayout.Button("Re Draw Hex Tile Mesh"))
+        {
+            map.ReDrawTileMesh();
         }
     }
 }

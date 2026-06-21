@@ -106,4 +106,13 @@ public class AdjacencyList
         }
         _tiles.Clear();
     }
+
+    /// <summary>
+    /// Calls the `DrawMesh()` on every tile stored in the adjacency list.
+    /// </summary>
+    public void ReDrawTileMesh()
+    {
+        foreach (KeyValuePair<HexCoord, GameObject> pair in _tiles)
+            pair.Value.GetComponent<HexRenderer>().DrawMesh();
+    }
 }
