@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "EntityEditAction",
+    "maps": [
+        {
+            "name": "Edit",
+            "id": "4302ddb5-128a-4b8d-9101-b778e20ec149",
+            "actions": [
+                {
+                    "name": "Something...",
+                    "type": "Button",
+                    "id": "da7160ac-dc0d-4967-a837-825c7f74bd6c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "b270bc81-8a43-4d95-9fb1-143fda0eac05",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Something...",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

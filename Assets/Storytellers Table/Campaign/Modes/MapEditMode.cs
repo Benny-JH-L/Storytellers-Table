@@ -69,6 +69,9 @@ namespace StorytellersTable.Campaign.Modes
                 Object.Destroy(_runtimeUiInstance);
                 _runtimeUiInstance = null;
             }
+
+            // Clean up ghost tiles
+            _DestroyUnconfirmedTiles();
         }
 
         void ICampaignMode.UpdateMode()

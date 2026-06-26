@@ -19,9 +19,9 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private GameObject _entityEditUiPrefab;
         [SerializeField] private GameObject _playUiPrefab;
 
-        [SerializeField] private InputActionAsset _playActions; // key binds to quickly swap between campaign modes, do what i did for the camera
+        [SerializeField] private PlayAction _playActions;
         [SerializeField] private MapEditAction _mapEditActions;
-        [SerializeField] private InputActionAsset _entityEditActions; // key binds to quickly swap between campaign modes, do what i did for the camera
+        [SerializeField] private EntityEditAction _entityEditActions;
 
         [Header("Temporary | Testing only")]
         [SerializeField] private MapBase map;
@@ -35,7 +35,9 @@ namespace StorytellersTable.Campaign.Modes
 
         private void Awake()
         {
+            _playActions = new PlayAction();
             _mapEditActions = new MapEditAction();
+            _entityEditActions = new EntityEditAction();
 
             ValidateDependencies();
             InitializeStateMachine();
@@ -88,14 +90,14 @@ namespace StorytellersTable.Campaign.Modes
                     CampaignModeType.MapEdit,
                     new MapEditMode(_mapEditUiPrefab, _uiCanvasRoot, _mapEditActions)
                 },
-                //{
-                //    CampaignModeType.EntityEdit,
-                //    new EntityEditMode(_entityEditUiPrefab, _uiCanvasRoot, _entityEditActions?.FindActionMap("EntityEditActions"))
-                //},
-                //{
-                //    CampaignModeType.Play,
-                //    new PlayMode(_playUiPrefab, _uiCanvasRoot, _playActions?.FindActionMap("PlayActions"))
-                //}
+                {
+                    CampaignModeType.EntityEdit,
+                    new EntityEditMode(_entityEditUiPrefab, _uiCanvasRoot, _entityEditActions)
+                },
+                {
+                    CampaignModeType.Play,
+                    new PlayMode(_playUiPrefab, _uiCanvasRoot, _playActions)
+                }
             };
 
             // TEMPORARY
@@ -103,8 +105,6 @@ namespace StorytellersTable.Campaign.Modes
             mapEditMpde.map = map;
             mapEditMpde.placedMaterial = material;
             mapEditMpde.ghostMaterial = ghostMaterial;
-
-            Debug.Log($"_mode size: {_modes.Count}");
         }
 
         private void ValidateDependencies()

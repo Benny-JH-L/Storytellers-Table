@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "PlayAction",
+    "maps": [
+        {
+            "name": "Play",
+            "id": "d487a6a1-e0c6-41c1-95cf-999674d13d2a",
+            "actions": [
+                {
+                    "name": "Something",
+                    "type": "Button",
+                    "id": "a6309e41-88d0-4c9f-b60d-15744c938351",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "09ea72f3-3250-46cd-a0bb-03dcff4c0fb3",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Something",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
