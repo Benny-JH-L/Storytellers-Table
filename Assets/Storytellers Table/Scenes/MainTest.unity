@@ -325,12 +325,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad00895775bbf5a4da9f72b14ea40b0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Campaign.Modes.CampaignModeManager
-  _uiCanvasRoot: {fileID: 133416157}
+  _uiCanvasRoot: {fileID: 1403335829}
   _mapEditUiPrefab: {fileID: 6086424774650633340, guid: e66329ba651ab254793fa5cecf5162d4, type: 3}
-  _entityEditUiPrefab: {fileID: 6086424774650633340, guid: e66329ba651ab254793fa5cecf5162d4, type: 3}
-  _playUiPrefab: {fileID: 6086424774650633340, guid: e66329ba651ab254793fa5cecf5162d4, type: 3}
-  _playActions: {fileID: 0}
-  _entityEditActions: {fileID: 0}
+  _entityEditUiPrefab: {fileID: 6086424774650633340, guid: 9a34ead84f2c6b24e8f762c70fa40a4b, type: 3}
+  _playUiPrefab: {fileID: 6086424774650633340, guid: 1a7c7622fb7e81d4cba87075d95e2acd, type: 3}
   map: {fileID: 571462470}
   material: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
   ghostMaterial: {fileID: 4874126678125670354, guid: ea6184a8c218b5e4b83aece7f86d7715, type: 3}

@@ -12,7 +12,7 @@ namespace StorytellersTable.Campaign.Modes
     public class CampaignModeManager : MonoBehaviour
     {
         [Header("UI Canvas Hierarchy Configurations")]
-        [SerializeField] private Transform _uiCanvasRoot;
+        [SerializeField] private Transform _uiCanvasRoot;   // needs to be a `Canvas` instance
 
         [Header("Mode Specific UI Prefabs")]
         [SerializeField] private GameObject _mapEditUiPrefab;

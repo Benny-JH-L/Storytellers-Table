@@ -4,6 +4,7 @@
 ## Camera ##
 WASD/Arrow keys:			move horizontally
 Q/E:						to move the camera down/up (vertical movement)
+Scroll wheel up/down:		zoom in/out
 
 # Mouse Dragging #
 middle mouse + shift key:									horizontal movment
