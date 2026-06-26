@@ -19,9 +19,14 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private GameObject _entityEditUiPrefab;
         [SerializeField] private GameObject _playUiPrefab;
 
+        [Header("Action Inputs")]
         [SerializeField] private PlayAction _playActions;
         [SerializeField] private MapEditAction _mapEditActions;
         [SerializeField] private EntityEditAction _entityEditActions;
+        [SerializeField] private ModeManagerAction _modeManagerActions;
+
+        [Header("Other")]
+        
 
         [Header("Temporary | Testing only")]
         [SerializeField] private MapBase map;
@@ -30,7 +35,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private Dictionary<CampaignModeType, ICampaignMode> _modes; // map the campaign type to an instance to manage its logic
         private ICampaignMode _currentMode;
-
+        
         public CampaignModeType CurrentModeType { get; private set; }
 
         private void Awake()
@@ -38,14 +43,17 @@ namespace StorytellersTable.Campaign.Modes
             _playActions = new PlayAction();
             _mapEditActions = new MapEditAction();
             _entityEditActions = new EntityEditAction();
+            _modeManagerActions = new ModeManagerAction();
 
             ValidateDependencies();
             InitializeStateMachine();
+            InitializeManagerActions();
         }
 
         private void OnEnable()
         {
             SwitchMode(CampaignModeType.MapEdit); // set to play when its implemented
+            _modeManagerActions.Enable();
         }
 
         private void Update() // contains this Update() for now, will have a seprate `UpdateMode` function similar done to the `modes`
@@ -117,6 +125,32 @@ namespace StorytellersTable.Campaign.Modes
                 throw new ArgumentNullException(nameof(_entityEditUiPrefab));
             if (_playUiPrefab == null) 
                 throw new ArgumentNullException(nameof(_playUiPrefab));
+        }
+
+        private void InitializeManagerActions()
+        {
+            _modeManagerActions.bind.CycleMode.performed += CycleMode;
+        }
+
+        /// <summary>
+        /// Cycles the campaign mode (Circular cycling)
+        /// </summary>
+        /// <param name="context"></param>
+        private void CycleMode(InputAction.CallbackContext context)
+        {
+            switch (CurrentModeType)
+            {
+                case CampaignModeType.Play:
+                    SwitchMode(CampaignModeType.MapEdit);
+                    break;
+                case CampaignModeType.MapEdit:
+                    SwitchMode(CampaignModeType.EntityEdit);
+                    break;
+                case CampaignModeType.EntityEdit:
+                    SwitchMode(CampaignModeType.Play);
+                    break;
+            }
+
         }
 
         private void OnDestroy()

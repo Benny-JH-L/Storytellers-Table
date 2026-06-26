@@ -37,11 +37,18 @@ namespace StorytellersTable.Campaign.Modes
             _uiParentTransform = uiParent;
             _inputMap = inputMap;
 
+            _runtimeUiInstance = null;
             _unconfirmedTiles = new List<GameObject>();
             // get ghost material here...
             _radialOn = false;
             _areaOn = false;
             _drawOn = false;
+
+            // add callback to toggle radial, area, and draw tile placements
+            _inputMap.Edit.EnableRadial.performed += ToggleRadial;
+            _inputMap.Edit.EnableArea.performed += ToggleArea;
+            _inputMap.Edit.EnableDraw.performed += ToggleDraw;
+            // add call backs to input map...
         }
 
         void ICampaignMode.Enter()
@@ -49,15 +56,9 @@ namespace StorytellersTable.Campaign.Modes
             // Instantiate UI if it does not exist
             if (_uiPrefab != null && _runtimeUiInstance == null)
                 _runtimeUiInstance = Object.Instantiate(_uiPrefab, _uiParentTransform);
-
             // logic to get the active scene's MapBase...
 
             _inputMap.Enable();
-            // add callback to toggle radial, area, and draw tile placements
-            _inputMap.Edit.EnableRadial.performed += ToggleRadial;  
-            _inputMap.Edit.EnableArea.performed += ToggleArea;
-            _inputMap.Edit.EnableDraw.performed += ToggleDraw;
-            // add call backs to input map...
         }
 
         void ICampaignMode.Exit()
@@ -107,7 +108,7 @@ namespace StorytellersTable.Campaign.Modes
                 if (map.graph.TryGetValue(mouseHexCoord, out GameObject hitTile))
                 {
                     TileComponent tileComp = hitTile.GetComponent<TileComponent>();
-                    Debug.Log($"Hover over | existing tile: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
+                    //Debug.Log($"Hover over | existing tile: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
 
                     // highlight the tile
                     _highlightTile(tileComp);

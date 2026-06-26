@@ -21,6 +21,8 @@ namespace StorytellersTable.Campaign.Modes
             _uiParentTransform = uiParentTransform;
             _inputMap = inputMap;
 
+            _runtimeUiInstance = null;
+            // add call backs to input map...
         }
 
         void ICampaignMode.Enter()
@@ -30,7 +32,6 @@ namespace StorytellersTable.Campaign.Modes
                 _runtimeUiInstance = Object.Instantiate(_uiPrefab, _uiParentTransform);
 
             _inputMap.Enable();
-            // add call backs to input map...
 
         }
 

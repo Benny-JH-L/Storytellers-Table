@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "ModeManagerAction",
+    "maps": [
+        {
+            "name": "bind",
+            "id": "2bae652d-ea7c-473e-ab6b-ffee78357900",
+            "actions": [
+                {
+                    "name": "CycleMode",
+                    "type": "Button",
+                    "id": "3915458d-d363-456b-8583-32d899b8ed22",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "cf1f1f70-38e8-478a-8d00-44ef584947b4",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleMode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
