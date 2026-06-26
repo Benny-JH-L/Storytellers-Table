@@ -1,0 +1,75 @@
+{
+    "version": 1,
+    "name": "MapEditAction",
+    "maps": [
+        {
+            "name": "Edit",
+            "id": "b5ecaa16-b0a3-4ad1-94d2-0b269acbc76e",
+            "actions": [
+                {
+                    "name": "Enable Radial",
+                    "type": "Button",
+                    "id": "4541399f-02e6-4004-9289-3a37b8187f3a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Enable Area",
+                    "type": "Button",
+                    "id": "c043a19c-997f-444f-be1c-4c0a60a1c700",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Enable Draw",
+                    "type": "Button",
+                    "id": "c95e7bd3-1b96-4ae6-83fa-8f5b9750017d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "32c0a76a-82ca-4cf7-8ef0-f12ecb1ebd91",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Enable Radial",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b90df6dd-a319-4cc1-8662-8098ef633345",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Enable Area",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "57e721c1-2a5e-45c4-ad09-45f3d4eabcbf",
+                    "path": "<Keyboard>/t",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Enable Draw",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

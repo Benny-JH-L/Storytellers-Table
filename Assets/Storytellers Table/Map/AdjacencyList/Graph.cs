@@ -16,7 +16,7 @@ public class Graph
     }
 
     /// <summary>
-    /// To get, `Graph[HexCoord]`, returns a GameObject if it exists, null otherwise.
+    /// To get, `Graph[HexCoord]`, returns a GameObject (with `TileComponent`) if it exists, null otherwise.
     /// To set, `Graph[HexCoord] = value`, value must be a game object with a TileComponent (& HexRenderer).
     /// </summary>
     /// <param name="hexCoord"></param>

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // Resource: https://www.youtube.com/watch?v=EPaSmQ2vtek
 
@@ -19,7 +17,7 @@ public abstract class MapBase : MonoBehaviour
 
     [Header("Other")]
     public string mapID;
-    [SerializeField] private Graph _graph;
+    [SerializeField] public Graph graph;
 
     // strictly for the Unity inspector
     [Header("OnValidate()")]
@@ -27,7 +25,7 @@ public abstract class MapBase : MonoBehaviour
 
     // shared stuff: convert mouse pixel pos -> hex, etc...
     public abstract void Setup();
-    public abstract TileBase CreateTileDataInstance(HexCoord hexCoord);
+    //public abstract TileBase CreateTileDataInstance(HexCoord hexCoord);
 
     private void Awake()
     {
@@ -62,43 +60,7 @@ public abstract class MapBase : MonoBehaviour
     public void ReDrawTileMesh()
     {
         Debug.Log("Re drawing tile mesh...");
-        _graph.ReDrawTileMesh();
-    }
-
-    public void Update()
-    {
-        // testing purposes only, will prolly be relocated
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                HexCoord hexCoord = WorldToAxial(hit.point);
-                Debug.Log($"Hit Point: {hit.point} | Computed Axial: {hexCoord}");
-
-                // To verify it maps to an actual tile object in your dictionary:
-                if (_graph != null && _graph.TryGetValue(hexCoord, out GameObject hitTile))
-                {
-                    //Debug.Log($"Successfully clicked on object: {hitTile.name} at Key: {hexCoord}");
-                    if (hitTile.TryGetComponent<TileComponent>(out TileComponent tileComp))
-                    {
-                        Debug.Log($"Clicked tile data type: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"Hit registered at {hexCoord}, but no matching tile key was found in the dictionary.");
-
-                    // place a tile at an empty space
-                    if (Keyboard.current.leftShiftKey.isPressed)
-                    {
-                        Debug.Log($"Placing new tile at {hexCoord}.");
-                        GameObject newTile = _GenerateTile(hexCoord);
-                    }
-
-                }
-            }
-        }
+        graph.ReDrawTileMesh();
     }
 
     /// <summary>
@@ -106,8 +68,8 @@ public abstract class MapBase : MonoBehaviour
     /// </summary>
     private void _LayoutMap()
     {
-        if (_graph == null)
-            _graph = new Graph();
+        if (graph == null)
+            graph = new Graph();
 
         ClearTiles();
 
@@ -159,7 +121,8 @@ public abstract class MapBase : MonoBehaviour
         hexRenderer.SetHexText(hexCoord);
 
         // Set up and bridge the tile data context
-        TileBase tileData = CreateTileDataInstance(hexCoord);
+        //TileBase tileData = CreateTileDataInstance(hexCoord);
+        TileBase tileData = new TileBase(hexCoord);
         TileComponent tileComponent = tile.GetComponent<TileComponent>();
         tileComponent.Setup(hexCoord, tileData);
 
@@ -167,7 +130,7 @@ public abstract class MapBase : MonoBehaviour
         tile.transform.SetParent(transform, true);  
 
         // add the tile to the adjacency map
-        _graph[hexCoord] = tile;
+        graph[hexCoord] = tile;
 
         return tile;
     }
@@ -197,58 +160,6 @@ public abstract class MapBase : MonoBehaviour
 
         // Inverting the Z axis to maintain your layout structure starting from top-left progression
         return new Vector3(xPosition, 0f, -zPosition);
-    }
-
-    /// <summary>
-    /// Clears and destroys all map tiles on this map
-    /// </summary>
-    public void ClearTiles()
-    {
-        _graph.Clear();
-    }
-
-    /// <summary>
-    /// [DEPRECATED] Computes the position for the hex tile based on row and col
-    /// </summary>
-    /// <param name="coordinate"></param>
-    /// <returns></returns>
-    private Vector3 _GetPositionForHexFromCoordinate(Vector2Int coordinate)
-    {
-        int column = coordinate.x;
-        int row = coordinate.y;
-        float width, height, xPosition, yPosition;
-        bool shouldOffset;
-        float horizontalDistance, verticalDistance, offset, size = outerSize;
-
-        if (!isFlatTopped)
-        {
-            shouldOffset = (row % 2) == 0;
-            width = Mathf.Sqrt(3) * size;
-            height = 2f * size;
-
-            horizontalDistance = width;
-            verticalDistance = height * (3f / 4f);
-
-            offset = (shouldOffset) ? width / 2 : 0;
-
-            xPosition = (column * horizontalDistance) + offset;
-            yPosition = (row * verticalDistance);
-        }
-        else
-        {
-            shouldOffset = (column % 2) == 0;
-            width = 2f * size;
-            height = Mathf.Sqrt(3) * size;
-
-            horizontalDistance = width * (3f / 4f);
-            verticalDistance = height;
-
-            offset = (shouldOffset) ? height / 2 : 0;
-            xPosition = (column * horizontalDistance);
-            yPosition = (row * verticalDistance) - offset;
-        }
-
-        return new Vector3(xPosition, 0, -yPosition); // since i want to layout the tiles from the top left, we inverse the z-position
     }
 
     /// <summary>
@@ -300,6 +211,14 @@ public abstract class MapBase : MonoBehaviour
         // (If sDiff is largest, no adjustments to q or r are required)
 
         return new HexCoord(q, r);
+    }
+
+    /// <summary>
+    /// Clears and destroys all map tiles on this map
+    /// </summary>
+    public void ClearTiles()
+    {
+        graph.Clear();
     }
 
 }

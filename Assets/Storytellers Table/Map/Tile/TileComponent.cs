@@ -41,54 +41,58 @@ public class TileComponent : MonoBehaviour
 }
 
 [Serializable]
-public abstract class TileBase
+public class TileBase
 {    
-    //HexCoord hexCoord; // can be computed based on world position
+    HexCoord hexCoord;
     int elevation;
-
+    
     //TileType tileType;
     //public Material material;
 
-    public TileBase()
+    public TileBase(HexCoord hexCoord)
     {
+        this.hexCoord = hexCoord;
         // tileType determines material obtained
     }
+
+    // HEAR ME OUT, TileBase contains all the data for World Tile, Stage Tile, and Floor tile, but only select stuff is shown based on map!
+    // (makes the map editor logic and UI easier to make!
 }
 
 
-[Serializable]
-public class WorldTile : TileBase
-{
-    public string stageMapID;   // own's a stage map
-    // data...
+//[Serializable]
+//public class WorldTile : TileBase
+//{
+//    public string stageMapID;   // own's a stage map
+//    // data...
 
-    public WorldTile()
-    {
+//    public WorldTile()
+//    {
 
-    }
-}
-
-
-[Serializable]
-public class StageTile : TileBase
-{
-    public string floorMapID;   // own's a floor map
-    // data...
-
-    public StageTile()
-    {
-
-    }
-}
+//    }
+//}
 
 
-[Serializable]
-public class FloorTile : TileBase
-{
-    // data...
+//[Serializable]
+//public class StageTile : TileBase
+//{
+//    public string floorMapID;   // own's a floor map
+//    // data...
+
+//    public StageTile()
+//    {
+
+//    }
+//}
+
+
+//[Serializable]
+//public class FloorTile : TileBase
+//{
+//    // data...
     
-    public FloorTile()
-    {
+//    public FloorTile()
+//    {
 
-    }
-}
+//    }
+//}
