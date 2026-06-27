@@ -131,8 +131,8 @@ GameObject:
   - component: {fileID: 75592059}
   - component: {fileID: 75592058}
   - component: {fileID: 75592057}
-  m_Layer: 6
-  m_Name: Plane (for mapedit raycasting)
+  m_Layer: 0
+  m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -227,10 +227,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 20, y: 20, z: 20}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 1457949020}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &133416156
 GameObject:
@@ -719,7 +719,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bb0158686dbfe14cac9a31d53be39d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldMap
-  mapSize: {x: 5, y: 5}
+  mapSize: {x: 10, y: 10}
   outerSize: 1
   innerSize: 0
   height: 1
@@ -1068,7 +1068,6 @@ Transform:
   m_Children:
   - {fileID: 330585546}
   - {fileID: 1320371449}
-  - {fileID: 75592060}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1457949021
@@ -1109,6 +1108,7 @@ SceneRoots:
   - {fileID: 832575519}
   - {fileID: 1179449150}
   - {fileID: 571462471}
+  - {fileID: 75592060}
   - {fileID: 1457949020}
   - {fileID: 308999769}
   - {fileID: 195430108}

@@ -10,6 +10,10 @@ namespace StorytellersTable.Campaign.Modes
     /// </summary>
     public class MapEditMode : ICampaignMode
     {
+        // Raycast to this layer to place tiles
+        public static LayerMask mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
+        public static float raycastMaxDistance = 500f;
+
         [Header("Tile Settings")]
         public float outerSize = 1f;
         public float innerSize = 0f;
@@ -98,8 +102,8 @@ namespace StorytellersTable.Campaign.Modes
             //if (plane.Raycast(ray, out float distance))
             //{
             //}
-
-            if (Physics.Raycast(ray, out RaycastHit hit)) // right now this only works when it hits something in the world, try to use the `plane` strat instead.
+            
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask)) // right now this only works when it hits something in the world, try to use the `plane` strat instead.
             {
                 mouseHexCoord = WorldToAxial(hit.point);
                 //Debug.Log($"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
