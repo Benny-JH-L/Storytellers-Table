@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public struct Face
 {
     public List<Vector3> vertices { get; private set; }
@@ -23,36 +22,29 @@ public struct Face
 [RequireComponent (typeof(MeshCollider))]
 public class HexRenderer : MonoBehaviour
 {
-    private Mesh _mesh;
+    // Registry for flyweight mesh caching
+    private static readonly Dictionary<(float innerSize, float outerSize, float height, bool isFlatTopped), Mesh> _meshRegistry = new();
+
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
-    private MeshCollider _meshCollider;
     private HexPosLabel _hexPosLabel;
 
-    private List<Face> _faces;  // faces of triangles
-
     [Header("Hex")]
-    [SerializeField] private Material _material;
+    [SerializeField] private Material _material;    // only for debugging, will be removed
     public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
     public float outerSize;     // size of the outer hexagon
     public float height;
     public bool isFlatTopped;
 
+
     private void Awake()
     {
         _meshFilter = GetComponent<MeshFilter>();
         _meshRenderer = GetComponent<MeshRenderer>();
-        _meshCollider = GetComponent<MeshCollider>();
 
         GameObject tmp = new GameObject("label", typeof(HexPosLabel));
         _hexPosLabel = tmp.GetComponent<HexPosLabel>();
         _hexPosLabel.SetParent(this);
-
-        _mesh = new Mesh();
-        _mesh.name = "Hex";
-
-        _meshFilter.mesh = _mesh;
-        _meshRenderer.material = _material;
     }
 
     //private void OnEnable()   // causing erros bc it is called when outerRadius,inner radius and height are 0, only use when doing single tile viewing and editing
@@ -69,44 +61,65 @@ public class HexRenderer : MonoBehaviour
     //        DrawMesh();
     //}
 
+    /// <summary>
+    /// Generates the mesh and updates the MeshFilter, MeshRenderer, and hexPosLabel.
+    /// </summary>
     public void DrawMesh()
     {
-        //Debug.Log($"outer={outerSize} inner={innerSize} height={height}");
+        //Debug.Log($"outer={outerSize} inner={innerSize} height={height} flatTopper={isFlatTopped}");
 
-        _DrawFaces();
-        _CombineFaces();
+        /*
+         * Instead of generating a mesh for each hex renderer instance, we can reuse the same mesh if they have the same
+         * inner size, outer size, height, and is flat topped or not.
+         */
+        var meshKey = (innerSize, outerSize, height, isFlatTopped);
+
+        // Try to get the cached mesh with key
+        if (!_meshRegistry.TryGetValue(meshKey, out Mesh sharedMesh) || sharedMesh == null)
+        {
+            // create the new mesh for the registry
+            sharedMesh = new Mesh();
+            sharedMesh.name = $"Shared_HexMesh_{innerSize}_{outerSize}_{height}_{isFlatTopped}";
+
+            List<Face> faces = _DrawFaces();
+            _CombineFaces(sharedMesh, faces);
+
+            // add the generated mesh to the registry cache
+            _meshRegistry[meshKey] = sharedMesh;
+        }
+        //Debug.Log($"Verts: {_mesh.vertexCount}  Tris: {_mesh.triangles.Length / 3}");
+
+        // update mesh filter
+        _meshFilter.sharedMesh = sharedMesh;
 
         _hexPosLabel.UpdateOffset();
-
-        //Debug.Log($"Verts: {_mesh.vertexCount}  Tris: {_mesh.triangles.Length / 3}");
-        _meshCollider.sharedMesh = null;   // force PhysX to rebuild collision data
-        _meshCollider.sharedMesh = _meshFilter.sharedMesh;
     }
 
     /// <summary>
-    /// Draws faces for the hexagon's, top, bottom, inner, and outer sides
+    /// Draws and returns `faces` for the hexagon's, top, bottom, inner, and outer sides
     /// </summary>
-    private void _DrawFaces()
+    /// <returns></returns>
+    private List<Face> _DrawFaces()
     {
-        _faces = new List<Face>();
+        List<Face> faces = new List<Face>();
 
         // Top faces
         for (int point = 0; point < 6; point++)
-        {
-            _faces.Add(_CreateFace(innerSize, outerSize, height / 2f, height / 2f, point));
-        }
+            faces.Add(_CreateFace(innerSize, outerSize, height / 2f, height / 2f, point));
 
         // Bottom faces
         for (int point = 0; point < 6; point++)
-            _faces.Add(_CreateFace(innerSize, outerSize, -height / 2f, -height / 2f, point, true));
+            faces.Add(_CreateFace(innerSize, outerSize, -height / 2f, -height / 2f, point, true));
 
         // Outer faces, for sides on the outer hexagon
         for (int point = 0; point < 6; point++)
-            _faces.Add(_CreateFace(outerSize, outerSize, height / 2f, -height / 2f, point, true));
+            faces.Add(_CreateFace(outerSize, outerSize, height / 2f, -height / 2f, point, true));
 
         // Inner faces, for sides on the inner hexagon
         for (int point = 0; point < 6; point++)
-            _faces.Add(_CreateFace(innerSize, innerSize, height / 2f, -height / 2f, point));
+            faces.Add(_CreateFace(innerSize, innerSize, height / 2f, -height / 2f, point));
+
+        return faces;
     }
 
     /// <summary>
@@ -157,9 +170,9 @@ public class HexRenderer : MonoBehaviour
     /// 
     /// See function implementation for example.
     /// </summary>
-    private void _CombineFaces()
+    private void _CombineFaces(Mesh targetMesh, List<Face> faces)
     {
-        _mesh.Clear();
+        targetMesh.Clear(); // ensure the mesh clear before adding to it
         /*
          * Get all the disjointed faces and flatten their vertices and UVs into single, global lists.
          * Because all vertices are combined into one massive list, we must offset the local 
@@ -182,28 +195,28 @@ public class HexRenderer : MonoBehaviour
         List<int> triangles = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
 
-        for (int i = 0; i < _faces.Count; i++)
+        for (int i = 0; i < faces.Count; i++)
         {
             // Add the vertices
-            vertices.AddRange(_faces[i].vertices);  // get the face's vertices and add it to the list
-            uvs.AddRange(_faces[i].uvs);            // of those vertices get and add their uvs.
+            vertices.AddRange(faces[i].vertices);  // get the face's vertices and add it to the list
+            uvs.AddRange(faces[i].uvs);            // of those vertices get and add their uvs.
 
             // Offset the triangles
             int offset = (4 * i);
-            foreach (int triangle in _faces[i].triangles)
+            foreach (int triangle in faces[i].triangles)
                 triangles.Add(triangle +  offset);
         }
 
-        _mesh.vertices = vertices.ToArray();
-        _mesh.triangles = triangles.ToArray();
-        _mesh.uv = uvs.ToArray();
-        _mesh.RecalculateNormals();
+        targetMesh.vertices = vertices.ToArray();
+        targetMesh.triangles = triangles.ToArray();
+        targetMesh.uv = uvs.ToArray();
+        targetMesh.RecalculateNormals();
     }
 
     public void SetMaterial(Material newMaterial)
     {
-        _meshRenderer.material = newMaterial;
-        _material = newMaterial;
+        _meshRenderer.sharedMaterial = newMaterial;
+        //_material = newMaterial;
     }
 
     /// <summary>
@@ -212,7 +225,6 @@ public class HexRenderer : MonoBehaviour
     /// <param name="hexCoord"></param>
     public void SetHexText(HexCoord hexCoord)
     {
-        //_hexCoord = hexCoord;
         _hexPosLabel.SetText(hexCoord);
     }
 

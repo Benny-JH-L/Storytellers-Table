@@ -97,12 +97,6 @@ namespace StorytellersTable.Campaign.Modes
             HexCoord mouseHexCoord;
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
 
-            // idk, we will see if i can use the plane
-            //Plane plane = new Plane(Vector3.up, Camera.main.transform.position);    // make a plane relative to the camera's position
-            //if (plane.Raycast(ray, out float distance))
-            //{
-            //}
-            
             if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask)) // right now this only works when it hits something in the world, try to use the `plane` strat instead.
             {
                 mouseHexCoord = WorldToAxial(hit.point);
@@ -151,6 +145,27 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         /// <summary>
+        /// Places all unconfirmed tiles on the active map.
+        /// </summary>
+        private void PlaceUnconfirmedTiles()
+        {
+            foreach (GameObject tile in _unconfirmedTiles)
+            {
+                // Set `placed` material
+                TileComponent tileComp = tile.GetComponent<TileComponent>();
+                tileComp.HexRenderer.SetMaterial(placedMaterial);
+
+                // Set parent of tile and add the tile to the active map 
+                tile.transform.SetParent(map.transform, true);
+                map.graph[tileComp.HexCoord] = tile;
+            }
+
+            _unconfirmedTiles.Clear();  // clear the list, do not destory GameObjects
+            return;
+        }
+
+        #region Tile Generation & World <-> Hex conversions
+        /// <summary>
         /// Generates a hex tile at the specified hex axial, q & r, coordinate, and places it at the converted world space position, 
         /// then adds it to the map's adjacency list.
         /// </summary>
@@ -178,33 +193,19 @@ namespace StorytellersTable.Campaign.Modes
             TileComponent tileComponent = tile.GetComponent<TileComponent>();
             tileComponent.Setup(hexCoord, tileData);
 
-            //// parent the tile to the map GameObject
-            //tile.transform.SetParent(map.transform, true);
-
-            //// add the tile to the adjacency map
-            //map.graph[hexCoord] = tile;
-
             return tile;
         }
 
         /// <summary>
-        /// Places all unconfirmed tiles.
+        /// Generates a hex tile at the worldPos converted to specified hex axial, q & r, coordinate, and places it at the converted world space position, 
+        /// then adds it to the map's adjacency list.
         /// </summary>
-        private void PlaceUnconfirmedTiles()
+        /// <param name="worldPos"></param>
+        /// <param name="mat"></param>
+        /// <returns></returns>
+        private GameObject _GenerateTile(Vector3 worldPos, Material mat)
         {
-            foreach (GameObject tile in _unconfirmedTiles)
-            {
-                // Set `placed` material
-                TileComponent tileComp = tile.GetComponent<TileComponent>();
-                tileComp.HexRenderer.SetMaterial(placedMaterial);
-
-                // Set parent of tile and add the tile to the active map 
-                tile.transform.SetParent(map.transform, true);
-                map.graph[tileComp.HexCoord] = tile;
-            }
-
-            _unconfirmedTiles.Clear();  // clear the list, do not destory GameObjects
-            return;
+            return _GenerateTile(WorldToAxial(worldPos), mat);
         }
 
         /// <summary>
@@ -284,7 +285,9 @@ namespace StorytellersTable.Campaign.Modes
 
             return new HexCoord(q, r);
         }
-
+        
+        #endregion
+        
         /// <summary>
         /// Destroys the list of unconfimed tiles GameObjets.
         /// </summary>
@@ -302,6 +305,8 @@ namespace StorytellersTable.Campaign.Modes
         {
             // code here
         }
+
+        #region Input Action Callbacks
 
         /// <summary>
         /// Callback to toggle radial tile placement for an Input Action.
@@ -371,5 +376,7 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         // functions for Input Action call backs...
+
+        #endregion
     }
 }
