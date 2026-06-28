@@ -1,7 +1,7 @@
 ﻿
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections.Generic;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -15,19 +15,19 @@ namespace StorytellersTable.Campaign.Modes
         public static float raycastMaxDistance = 500f;
 
         [Header("Tile Settings")]
-        public float outerSize = 1f;
-        public float innerSize = 0f;
-        public float height = 1f;
-        public bool isFlatTopped;
-        public Material placedMaterial;       // material of placed tiles --> set based on UI
-        public Material ghostMaterial;  // material of unconfirmed tiles --> should be grabbed in MapEditMode consstructor.
+        public static float outerSize = 1f;
+        public static float innerSize = 0f;
+        public static float height = 1f;
+        public static bool isFlatTopped;
+        public static Material placedMaterial;       // material of placed tiles --> set based on UI
+        public static Material ghostMaterial;  // material of unconfirmed tiles --> should be grabbed in MapEditMode consstructor.
 
         private readonly GameObject _uiPrefab;
         private readonly Transform _uiParentTransform;
         private readonly MapEditAction _inputMap;
 
-        [SerializeField] private GameObject _runtimeUiInstance;
-        public MapBase map;   // for now drag and drop the map in the unity inspector, will need to get it from the scene manager class later
+        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode
+        public MapBase activeMap;   // for now drag and drop the map in the unity inspector, will need to get it from the scene manager class later
 
         // tiles that are not placed, where potential placement is visually shown.
         private List<GameObject> _unconfirmedTiles;
@@ -103,7 +103,7 @@ namespace StorytellersTable.Campaign.Modes
                 //Debug.Log($"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
 
                 // Check if there's a tile object (non null) at that hex position of the map
-                if (map.graph.TryGetValue(mouseHexCoord, out GameObject hitTile))
+                if (activeMap.graph.TryGetValue(mouseHexCoord, out GameObject hitTile))
                 {
                     TileComponent tileComp = hitTile.GetComponent<TileComponent>();
                     //Debug.Log($"Hover over | existing tile: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
@@ -156,12 +156,71 @@ namespace StorytellersTable.Campaign.Modes
                 tileComp.HexRenderer.SetMaterial(placedMaterial);
 
                 // Set parent of tile and add the tile to the active map 
-                tile.transform.SetParent(map.transform, true);
-                map.graph[tileComp.HexCoord] = tile;
+                tile.transform.SetParent(activeMap.transform, true);
+                activeMap.graph[tileComp.HexCoord] = tile;
             }
 
             _unconfirmedTiles.Clear();  // clear the list, do not destory GameObjects
             return;
+        }
+
+        /// <summary>
+        /// Destroys the list of unconfimed tiles GameObjets.
+        /// </summary>
+        private void _DestroyUnconfirmedTiles()
+        {
+            foreach (GameObject tile in _unconfirmedTiles)
+            {
+                if (tile != null)
+                    Object.Destroy(tile);
+            }
+            _unconfirmedTiles.Clear();
+        }
+
+        private void _highlightTile(TileComponent tileComp)
+        {
+            // code here
+            // could make a tile just slightly larger than the target tile and make it light a light blue shade that's like 20% opacity or something
+            // which is enabled/disabled and moved to target tiles position
+        }
+
+        /// <summary>
+        /// Generates a map using q, and r. q is the length of the map, and r is the height of the map.
+        /// </summary>
+        /// <param name="map"></param>
+        /// <param name="mapSize"></param>
+        public static void LayoutMap(MapBase map, Vector2Int mapSize)
+        {
+            if (map.graph == null)
+                map.graph = new Graph();
+
+            map.ClearTiles();
+
+            // Generate a clean rectangular bound using axial loops
+            for (int r = 0; r < mapSize.y; r++)
+            {
+                // Calculate the row offset dynamically to slice a straight vertical edge
+                int offset = Mathf.FloorToInt(r / 2f);
+
+                for (int q = -offset; q < mapSize.x - offset; q++)
+                {
+                    // Capture the exact true coordinates
+                    HexCoord hexCoord = new HexCoord(q, r);
+
+                    // If flat-topped, the coordinate mapping swaps columns/rows for the offset orientation
+                    if (MapEditMode.isFlatTopped)
+                    {
+                        int qFlat = r;
+                        int offsetFlat = Mathf.FloorToInt(qFlat / 2f);
+                        int rFlat = q;
+                        hexCoord = new HexCoord(qFlat, rFlat + offsetFlat);
+                    }
+
+                    GameObject tile = _GenerateTile(hexCoord, placedMaterial);
+                    map.graph[hexCoord] = tile;
+                    tile.transform.SetParent(map.transform, true);  // ensure the generated tile is parented to the map
+                }
+            }
         }
 
         #region Tile Generation & World <-> Hex conversions
@@ -172,7 +231,7 @@ namespace StorytellersTable.Campaign.Modes
         /// <param name="hexCoord"></param>
         /// <param name="mat"></param>
         /// <returns></returns>
-        private GameObject _GenerateTile(HexCoord hexCoord, Material mat)
+        private static GameObject _GenerateTile(HexCoord hexCoord, Material mat)
         {
             // Create GameObject with HexRenderer and TileComponent
             GameObject tile = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer), typeof(TileComponent));
@@ -203,7 +262,7 @@ namespace StorytellersTable.Campaign.Modes
         /// <param name="worldPos"></param>
         /// <param name="mat"></param>
         /// <returns></returns>
-        private GameObject _GenerateTile(Vector3 worldPos, Material mat)
+        private static GameObject _GenerateTile(Vector3 worldPos, Material mat)
         {
             return _GenerateTile(WorldToAxial(worldPos), mat);
         }
@@ -212,7 +271,7 @@ namespace StorytellersTable.Campaign.Modes
         /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.
         /// This removes all floating point tracking gaps and anchors the origin natively at (0,0,0).
         /// </summary>
-        private Vector3 _GetPositionFromAxial(HexCoord coord)
+        private static Vector3 _GetPositionFromAxial(HexCoord coord)
         {
             float xPosition = 0f;
             float zPosition = 0f;
@@ -240,7 +299,7 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         /// <param name="worldPos"></param>
         /// <returns></returns>
-        public HexCoord WorldToAxial(Vector3 worldPos)
+        public static HexCoord WorldToAxial(Vector3 worldPos)
         {
             float size = outerSize;
             float fracQ, fracR;
@@ -285,26 +344,8 @@ namespace StorytellersTable.Campaign.Modes
 
             return new HexCoord(q, r);
         }
-        
-        #endregion
-        
-        /// <summary>
-        /// Destroys the list of unconfimed tiles GameObjets.
-        /// </summary>
-        private void _DestroyUnconfirmedTiles()
-        {
-            foreach (GameObject tile in _unconfirmedTiles)
-            {
-                if (tile != null)
-                    Object.Destroy(tile);
-            }
-            _unconfirmedTiles.Clear();
-        }
 
-        private void _highlightTile(TileComponent tileComp)
-        {
-            // code here
-        }
+        #endregion
 
         #region Input Action Callbacks
 

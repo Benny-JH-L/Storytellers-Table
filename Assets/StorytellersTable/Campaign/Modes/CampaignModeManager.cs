@@ -110,9 +110,9 @@ namespace StorytellersTable.Campaign.Modes
 
             // TEMPORARY
             MapEditMode mapEditMpde = (MapEditMode)_modes[CampaignModeType.MapEdit];
-            mapEditMpde.map = map;
-            mapEditMpde.placedMaterial = material;
-            mapEditMpde.ghostMaterial = ghostMaterial;
+            mapEditMpde.activeMap = map;
+            MapEditMode.placedMaterial = material;
+            MapEditMode.ghostMaterial = ghostMaterial;
         }
 
         private void ValidateDependencies()

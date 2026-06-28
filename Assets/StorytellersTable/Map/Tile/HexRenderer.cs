@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Resource for basic idea: https://www.youtube.com/watch?v=EPaSmQ2vtek
+
 public struct Face
 {
     public List<Vector3> vertices { get; private set; }
@@ -95,6 +97,7 @@ public class HexRenderer : MonoBehaviour
         _hexPosLabel.UpdateOffset();
     }
 
+    #region Face generation
     /// <summary>
     /// Draws and returns `faces` for the hexagon's, top, bottom, inner, and outer sides
     /// </summary>
@@ -162,6 +165,7 @@ public class HexRenderer : MonoBehaviour
         float angle_rad = Mathf.PI / 180f * angle_deg;  // radians
         return new Vector3((size * Mathf.Cos(angle_rad)), height, (size * Mathf.Sin(angle_rad)));
     }
+    #endregion
 
     /// <summary>
     /// Get all the disjointed faces and flatten their vertices and UVs into single, global lists.
