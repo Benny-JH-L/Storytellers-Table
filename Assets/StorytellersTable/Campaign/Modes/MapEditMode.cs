@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using StorytellersTable.Core.Data;
+using StorytellersTable.Map;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -27,7 +29,7 @@ namespace StorytellersTable.Campaign.Modes
         private readonly MapEditAction _inputMap;
 
         [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode
-        public MapBase activeMap;   // for now drag and drop the map in the unity inspector, will need to get it from the scene manager class later
+        public MapData activeMap => MapDataManager.Instance.ActiveMapData;
 
         // tiles that are not placed, where potential placement is visually shown.
         private List<GameObject> _unconfirmedTiles;
@@ -103,6 +105,8 @@ namespace StorytellersTable.Campaign.Modes
                 //Debug.Log($"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
 
                 // Check if there's a tile object (non null) at that hex position of the map
+                if (activeMap == null)
+                    Debug.LogWarning("BRUHHHH");
                 if (activeMap.graph.TryGetValue(mouseHexCoord, out GameObject hitTile))
                 {
                     TileComponent tileComp = hitTile.GetComponent<TileComponent>();
@@ -156,7 +160,7 @@ namespace StorytellersTable.Campaign.Modes
                 tileComp.HexRenderer.SetMaterial(placedMaterial);
 
                 // Set parent of tile and add the tile to the active map 
-                tile.transform.SetParent(activeMap.transform, true);
+                tile.transform.SetParent(MapRenderer.Instance.transform, true);
                 activeMap.graph[tileComp.HexCoord] = tile;
             }
 
@@ -189,7 +193,9 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         /// <param name="map"></param>
         /// <param name="mapSize"></param>
-        public static void LayoutMap(MapBase map, Vector2Int mapSize)
+
+        //public static void LayoutMap(MapData2 map, Vector2Int mapSize)
+        public static void LayoutMap(MapData map, Vector2Int mapSize)
         {
             if (map.graph == null)
                 map.graph = new Graph();
@@ -218,7 +224,10 @@ namespace StorytellersTable.Campaign.Modes
 
                     GameObject tile = _GenerateTile(hexCoord, placedMaterial);
                     map.graph[hexCoord] = tile;
-                    tile.transform.SetParent(map.transform, true);  // ensure the generated tile is parented to the map
+                    //tile.transform.SetParent(MapDataManager.Instance.transform, true);  // ensure the generated tile is parented to the map
+
+                    tile.transform.SetParent(MapRenderer.Instance.transform, true);  // ensure the generated tile is parented to the map
+
                 }
             }
         }
@@ -248,7 +257,7 @@ namespace StorytellersTable.Campaign.Modes
             hexRenderer.SetHexText(hexCoord);
 
             // Set up and bridge the tile data context
-            TileBase tileData = new TileBase(hexCoord);
+            TileData tileData = new TileData(hexCoord);
             TileComponent tileComponent = tile.GetComponent<TileComponent>();
             tileComponent.Setup(hexCoord, tileData);
 

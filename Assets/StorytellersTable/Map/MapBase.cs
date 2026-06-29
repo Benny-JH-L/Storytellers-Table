@@ -1,8 +1,9 @@
-﻿using System;
+﻿using StorytellersTable.Core.Data;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-
-public abstract class MapBase : MonoBehaviour
+public abstract class MapData2 : MonoBehaviour
 {
     [Header("Grid Settings")]
     public Vector2Int mapSize;
@@ -27,7 +28,7 @@ public abstract class MapBase : MonoBehaviour
 
     private void OnEnable()
     {
-        StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, mapSize);
+        //StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, mapSize);
     }
 
     private void OnValidate()
@@ -45,7 +46,7 @@ public abstract class MapBase : MonoBehaviour
     public void RebuildMap()
     {
         Debug.Log($"Re building map of size q={mapSize.x}, r={mapSize.y}...");
-        StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, mapSize);
+        //StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, mapSize);
     }
 
     [ContextMenu("Re Draw Hex Tile Mesh")] // In the Unity inspector, right click the map script, and select this 

@@ -329,7 +329,6 @@ MonoBehaviour:
   _mapEditUiPrefab: {fileID: 6086424774650633340, guid: e66329ba651ab254793fa5cecf5162d4, type: 3}
   _entityEditUiPrefab: {fileID: 6086424774650633340, guid: 9a34ead84f2c6b24e8f762c70fa40a4b, type: 3}
   _playUiPrefab: {fileID: 6086424774650633340, guid: 1a7c7622fb7e81d4cba87075d95e2acd, type: 3}
-  map: {fileID: 571462470}
   material: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
   ghostMaterial: {fileID: 4874126678125670354, guid: ea6184a8c218b5e4b83aece7f86d7715, type: 3}
 --- !u!4 &308999769
@@ -341,7 +340,7 @@ Transform:
   m_GameObject: {fileID: 308999767}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.04774, y: -1.40024, z: -1.57455}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -690,7 +689,7 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &571462469
+--- !u!1 &617929185
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -698,42 +697,79 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 571462471}
-  - component: {fileID: 571462470}
+  - component: {fileID: 617929187}
+  - component: {fileID: 617929186}
   m_Layer: 0
-  m_Name: Map
+  m_Name: MapDataManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &571462470
+--- !u!114 &617929186
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 571462469}
+  m_GameObject: {fileID: 617929185}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bb0158686dbfe14cac9a31d53be39d1, type: 3}
+  m_Script: {fileID: 11500000, guid: ff36ce26625b14d489c41e2be9d09e8b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WorldMap
-  mapSize: {x: 1, y: 1}
-  outerSize: 1
-  innerSize: 0
-  height: 1
-  isFlatTopped: 0
-  material: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
-  mapID: 
-  toggleOnValidate: 0
---- !u!4 &571462471
+  m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Map.MapDataManager
+  defaultMapSize: {x: 5, y: 5}
+--- !u!4 &617929187
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 571462469}
+  m_GameObject: {fileID: 617929185}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &721707481
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 721707483}
+  - component: {fileID: 721707482}
+  m_Layer: 0
+  m_Name: MapRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &721707482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721707481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88bbfd3026faddd459215f275ee5619b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Map.MapRenderer
+--- !u!4 &721707483
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721707481}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1101,6 +1137,50 @@ MonoBehaviour:
   elevationStep: 2
   onPseudoOrthographic: 0
   cameraFOV: 60
+--- !u!1 &1843864149
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1843864151}
+  - component: {fileID: 1843864150}
+  m_Layer: 0
+  m_Name: Diver
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1843864150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1843864149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee449e8ce5b3fdf4bb45dd1ea11f2e66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Driver
+--- !u!4 &1843864151
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1843864149}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1108,8 +1188,10 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 1179449150}
-  - {fileID: 571462471}
-  - {fileID: 1457949020}
   - {fileID: 308999769}
+  - {fileID: 617929187}
+  - {fileID: 721707483}
+  - {fileID: 1843864151}
+  - {fileID: 1457949020}
   - {fileID: 195430108}
   - {fileID: 133416157}

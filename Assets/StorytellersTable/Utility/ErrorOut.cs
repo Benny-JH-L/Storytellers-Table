@@ -1,16 +1,19 @@
 ﻿using UnityEngine;
 
-public class ErrorOut
+namespace StorytellersTable.Utility
 {
-
-    /// <summary>
-    /// Throws a new System.Exception(...) with a structured message.
-    /// </summary>
-    /// <param name="caller"></param>
-    /// <param name="msg"></param>
-    /// <exception cref="System.Exception"></exception>
-    public static void Throw(object caller, string msg)
+    public class ErrorOut
     {
-        throw new System.Exception($"[{caller.GetType()}] {msg}");
+        /// <summary>
+        /// Throws a new System.Exception(...) with a structured message.
+        /// </summary>
+        /// <param name="caller"></param>
+        /// <param name="msg"></param>
+        /// <exception cref="System.Exception"></exception>
+        public static void Throw(object caller, string msg)
+        {
+            throw new System.Exception($"[{caller.GetType()}] {msg}");
+        }
     }
+
 }

@@ -9,8 +9,11 @@ namespace StorytellersTable.Campaign.Modes
     /// <summary>
     /// Central driver of state machine (campaign mode state), lifecycle, configurations and mode transitions.
     /// </summary>
+    [DisallowMultipleComponent]
     public class CampaignModeManager : MonoBehaviour
     {
+        public static CampaignModeManager Instance { get; private set; }
+
         [Header("UI Canvas Hierarchy Configurations")]
         [SerializeField] private Transform _uiCanvasRoot;   // needs to be a `Canvas` instance
 
@@ -29,7 +32,7 @@ namespace StorytellersTable.Campaign.Modes
         
 
         [Header("Temporary | Testing only")]
-        [SerializeField] private MapBase map;
+        //[SerializeField] private MapData map;
         [SerializeField] private Material material;
         [SerializeField] private Material ghostMaterial;
 
@@ -40,6 +43,12 @@ namespace StorytellersTable.Campaign.Modes
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             _playActions = new PlayAction();
             _mapEditActions = new MapEditAction();
             _entityEditActions = new EntityEditAction();
@@ -52,7 +61,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private void OnEnable()
         {
-            SwitchMode(CampaignModeType.MapEdit); // set to play when its implemented
+            SwitchMode(CampaignModeType.Play); // set to play when its implemented
             _modeManagerActions.Enable();
         }
 
@@ -109,8 +118,6 @@ namespace StorytellersTable.Campaign.Modes
             };
 
             // TEMPORARY
-            MapEditMode mapEditMpde = (MapEditMode)_modes[CampaignModeType.MapEdit];
-            mapEditMpde.activeMap = map;
             MapEditMode.placedMaterial = material;
             MapEditMode.ghostMaterial = ghostMaterial;
         }

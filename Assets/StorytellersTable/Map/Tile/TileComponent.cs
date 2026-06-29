@@ -1,98 +1,58 @@
 ﻿
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
-//public enum TileType
-//{
-//    Grass, Water, Snow, Desert // etc..
-//};
-
-[RequireComponent(typeof(HexRenderer))]
-public class TileComponent : MonoBehaviour
+namespace StorytellersTable.Core.Data
 {
-    [SerializeReference] private TileBase _tileData;    // holds data for WorldTile, StageTile, FloorTile
-
-    public HexCoord HexCoord { get; private set; }          // getter, setter, and variable for `HexCoord`
-    public HexRenderer HexRenderer { get; private set; }    // getter, setter, and variable for `HexRenderer`
-
-    private void Awake()
+    [RequireComponent(typeof(HexRenderer))]
+    public class TileComponent : MonoBehaviour
     {
-        HexRenderer = GetComponent<HexRenderer>();
+        [SerializeReference] public TileData _tileData;         // holds data for WorldTile, StageTile, FloorTile
+
+        public HexCoord HexCoord { get; private set; }          // getter, setter, and variable for `HexCoord`
+        public HexRenderer HexRenderer { get; private set; }    // getter, setter, and variable for `HexRenderer`
+
+        private void Awake()
+        {
+            HexRenderer = GetComponent<HexRenderer>();
+        }
+
+        /// <summary>
+        /// Initializes the visual tile component with its data context and coordinates.
+        /// </summary>
+        public void Setup(HexCoord hexCoord, TileData tileData)
+        {
+            HexCoord = hexCoord;
+            _tileData = tileData;
+        }
     }
 
     /// <summary>
-    /// Initializes the visual tile component with its data context and coordinates.
+    /// Raw tile information.
     /// </summary>
-    public void Setup(HexCoord hexCoord, TileBase tileData)
+    [Serializable]
+    public class TileData
     {
-        HexCoord = hexCoord;
-        _tileData = tileData;
-    }
+        public HexCoord hexCoord;
+        public int elevation;
+        public string tileTypeId;   // ex. Grass, Water, Snow, Desert, etc..
 
-    /// <summary>
-    /// Type-safe getter to fetch the data model casted to its explicit type.
-    /// Usage: var worldData = tileComp.GetData<WorldTile>();
-    /// </summary>
-    public T GetData<T>() where T : TileBase
-    {
-        return _tileData as T;
+        /// <summary>
+        /// Universal Pointer ID referencing nested lower-tier maps.
+        /// If this tile exists on a WorldMap, this field references a StageMap ID.
+        /// If on a StageMap, it points to a FloorMap ID.
+        /// </summary>
+        public string targetNestedMapId;
+
+        public TileData(HexCoord hexCoord, int elevation = 0, string tileTypeId = "Grass")
+        {
+            this.hexCoord = hexCoord;
+            this.elevation = elevation;
+            this.tileTypeId = tileTypeId;
+            targetNestedMapId = String.Empty;
+        }
+
+        // HEAR ME OUT, TileBase contains all the data for World Tile, Stage Tile, and Floor tile, but only select stuff is shown based on map!
+        // (makes the map editor logic and UI easier to make!
     }
 }
-
-[Serializable]
-public class TileBase
-{    
-    HexCoord hexCoord;
-    int elevation;
-    
-    //TileType tileType;
-    //public Material material;
-
-    public TileBase(HexCoord hexCoord)
-    {
-        this.hexCoord = hexCoord;
-        // tileType determines material obtained
-    }
-
-    // HEAR ME OUT, TileBase contains all the data for World Tile, Stage Tile, and Floor tile, but only select stuff is shown based on map!
-    // (makes the map editor logic and UI easier to make!
-}
-
-
-//[Serializable]
-//public class WorldTile : TileBase
-//{
-//    public string stageMapID;   // own's a stage map
-//    // data...
-
-//    public WorldTile()
-//    {
-
-//    }
-//}
-
-
-//[Serializable]
-//public class StageTile : TileBase
-//{
-//    public string floorMapID;   // own's a floor map
-//    // data...
-
-//    public StageTile()
-//    {
-
-//    }
-//}
-
-
-//[Serializable]
-//public class FloorTile : TileBase
-//{
-//    // data...
-    
-//    public FloorTile()
-//    {
-
-//    }
-//}
