@@ -12,7 +12,7 @@ namespace StorytellersTable.Utility.Log
         /// <param name="message"></param>
         public static void Log(object caller, string message)
         {
-            Debug.Log($"[{caller.GetType()}] {message}");
+            Debug.Log($"[{caller.GetType()}] \n{message}");
         }
     }
 
@@ -25,7 +25,7 @@ namespace StorytellersTable.Utility.Log
         /// <param name="message"></param>
         public static void Log(object caller, string message)
         {
-            Debug.LogWarning($"[{caller.GetType()}] {message}");
+            Debug.LogWarning($"[{caller.GetType()}] \n{message}");
         }
 
     }
@@ -40,7 +40,7 @@ namespace StorytellersTable.Utility.Log
         /// <exception cref="System.Exception"></exception>
         public static void Log(object caller, string msg)
         {
-            Debug.LogError($"[{caller.GetType()}] {msg}");
+            Debug.LogError($"[{caller.GetType()}] \n{msg}");
         }
     }
 }
