@@ -3,14 +3,18 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using StorytellersTable.Utility.Log;
 
 namespace StorytellersTable.Campaign.Modes
 {
     /// <summary>
     /// Central driver of state machine (campaign mode state), lifecycle, configurations and mode transitions.
     /// </summary>
+    [DisallowMultipleComponent]
     public class CampaignModeManager : MonoBehaviour
     {
+        public static CampaignModeManager Instance { get; private set; }
+
         [Header("UI Canvas Hierarchy Configurations")]
         [SerializeField] private Transform _uiCanvasRoot;   // needs to be a `Canvas` instance
 
@@ -28,11 +32,6 @@ namespace StorytellersTable.Campaign.Modes
         [Header("Other")]
         
 
-        [Header("Temporary | Testing only")]
-        [SerializeField] private MapBase map;
-        [SerializeField] private Material material;
-        [SerializeField] private Material ghostMaterial;
-
         private Dictionary<CampaignModeType, ICampaignMode> _modes; // map the campaign type to an instance to manage its logic
         private ICampaignMode _currentMode;
         
@@ -40,6 +39,14 @@ namespace StorytellersTable.Campaign.Modes
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
+
             _playActions = new PlayAction();
             _mapEditActions = new MapEditAction();
             _entityEditActions = new EntityEditAction();
@@ -69,7 +76,7 @@ namespace StorytellersTable.Campaign.Modes
         {
             if (_modes == null || !_modes.TryGetValue(switchToMode, out ICampaignMode targetMode))
             {
-                Debug.LogError($"[CampaignModeManager] Failed to transition. Mode '{switchToMode}' is not registered.");
+                ErrorOut.Log(this, $"Failed to transition. Mode '{switchToMode}' is not registered.");
                 return;
             }
 
@@ -86,7 +93,7 @@ namespace StorytellersTable.Campaign.Modes
             // set up
             _currentMode.Enter();
 
-            Debug.Log($"[CampaignModeManager] Successfully transitioned mode to: {switchToMode}");
+            DebugOut.Log(this, $"Successfully transitioned mode to: {switchToMode}");
         }
 
         private void InitializeStateMachine()
@@ -107,12 +114,6 @@ namespace StorytellersTable.Campaign.Modes
                     new PlayMode(_playUiPrefab, _uiCanvasRoot, _playActions)
                 }
             };
-
-            // TEMPORARY
-            MapEditMode mapEditMpde = (MapEditMode)_modes[CampaignModeType.MapEdit];
-            mapEditMpde.activeMap = map;
-            MapEditMode.placedMaterial = material;
-            MapEditMode.ghostMaterial = ghostMaterial;
         }
 
         private void ValidateDependencies()

@@ -21,7 +21,6 @@ public struct Face
 
 [RequireComponent (typeof(MeshFilter))]
 [RequireComponent (typeof(MeshRenderer))]
-[RequireComponent (typeof(MeshCollider))]
 public class HexRenderer : MonoBehaviour
 {
     // Registry for flyweight mesh caching
