@@ -4,7 +4,6 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(Canvas))]
-
 public class HexPosLabel : MonoBehaviour
 {
     [SerializeField] private Canvas _canvas;
