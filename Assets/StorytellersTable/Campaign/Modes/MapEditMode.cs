@@ -318,7 +318,6 @@ namespace StorytellersTable.Campaign.Modes
             hexRenderer.isFlatTopped = isFlatTopped;
             hexRenderer.SetMaterial(mat);
             hexRenderer.DrawMesh();
-            hexRenderer.SetHexText(hexCoord);
 
             return hexRenderer;
         }

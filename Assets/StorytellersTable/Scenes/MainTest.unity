@@ -842,7 +842,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c696bce7729ccf48818abe96a0d7add, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Map.MapManager
-  defaultMapSize: {x: 3, y: 3}
+  defaultMapSize: {x: 1, y: 2}
+  hexRendererParent: {fileID: 0}
+  coordinatesRenderer: {fileID: 0}
 --- !u!4 &1022669222
 Transform:
   m_ObjectHideFlags: 0

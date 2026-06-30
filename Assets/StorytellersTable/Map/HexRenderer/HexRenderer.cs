@@ -28,13 +28,12 @@ public class HexRenderer : MonoBehaviour
 
     private MeshFilter _meshFilter;
     private MeshRenderer _meshRenderer;
-    private HexPosLabel _hexPosLabel;
 
     [Header("Hex")]
     [SerializeField] private Material _material;    // only for debugging, will be removed
     public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
     public float outerSize;     // size of the outer hexagon
-    public float height;
+    public float height;        // TileData's height represent this
     public bool isFlatTopped;
 
 
@@ -42,10 +41,6 @@ public class HexRenderer : MonoBehaviour
     {
         _meshFilter = GetComponent<MeshFilter>();
         _meshRenderer = GetComponent<MeshRenderer>();
-
-        GameObject tmp = new GameObject("label", typeof(HexPosLabel));
-        _hexPosLabel = tmp.GetComponent<HexPosLabel>();
-        _hexPosLabel.SetParent(this);
     }
 
     //private void OnEnable()   // causing erros bc it is called when outerRadius,inner radius and height are 0, only use when doing single tile viewing and editing
@@ -54,13 +49,13 @@ public class HexRenderer : MonoBehaviour
     //}
 
     //comment this out when im satisfied
-    //public void OnValidate()
-    //{
-    //    // Note: When a new HexRenderer is made, this is called first before any initialization takes place, so only use this when 
-    //    // testing out tile settings so you see real time adjustments
-    //    if (Application.isPlaying)
-    //        DrawMesh();
-    //}
+    public void OnValidate()
+    {
+        // Note: When a new HexRenderer is made, this is called first before any initialization takes place, so only use this when 
+        // testing out tile settings so you see real time adjustments
+        if (Application.isPlaying)
+            DrawMesh();
+    }
 
     /// <summary>
     /// Generates the mesh and updates the MeshFilter, MeshRenderer, and hexPosLabel.
@@ -93,7 +88,7 @@ public class HexRenderer : MonoBehaviour
         // update mesh filter
         _meshFilter.sharedMesh = sharedMesh;
 
-        _hexPosLabel.UpdateOffset();
+        //_hexPosLabel.UpdateOffset();
     }
 
     #region Face generation
@@ -221,15 +216,5 @@ public class HexRenderer : MonoBehaviour
         _meshRenderer.sharedMaterial = newMaterial;
         //_material = newMaterial;
     }
-
-    /// <summary>
-    /// Set the displayed hex (axial) coordinate, q, r of the tile.
-    /// </summary>
-    /// <param name="hexCoord"></param>
-    public void SetHexText(HexCoord hexCoord)
-    {
-        _hexPosLabel.SetText(hexCoord);
-    }
-
 
 }

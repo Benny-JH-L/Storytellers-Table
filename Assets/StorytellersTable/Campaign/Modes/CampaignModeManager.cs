@@ -45,6 +45,8 @@ namespace StorytellersTable.Campaign.Modes
                 return;
             }
 
+            DebugOut.Log(this, "Awake()");
+
             Instance = this;
 
             _playActions = new PlayAction();

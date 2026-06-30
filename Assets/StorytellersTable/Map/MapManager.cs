@@ -2,6 +2,7 @@
 using StorytellersTable.Core.Data;
 using StorytellersTable.Utility.Log;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace StorytellersTable.Map
@@ -17,12 +18,13 @@ namespace StorytellersTable.Map
         [SerializeField] public Vector2Int defaultMapSize = new Vector2Int(5, 5);
 
         // used to store hex tile visual
-        private GameObject hexRendererParent;
+        [SerializeField] private GameObject hexRendererParent;
+        // handles axial coordinate visuals of tiles in the map
+        [SerializeField] private CoordinatesRenderer coordinatesRenderer;
 
-        private readonly static string simulatedSwitch = "1";
+        private readonly static string simulatedSwitch = "1";   // simulates map switching id
 
         public MapData ActiveMapData { get; private set; }
-
 
         /// <summary>
         /// Caches loaded map datas from disk.
@@ -38,8 +40,13 @@ namespace StorytellersTable.Map
                 return;
             }
 
+            DebugOut.Log(this, "Awake()");
+
             hexRendererParent = new GameObject("HexRendererParent");
             hexRendererParent.transform.SetParent(this.transform, true);
+
+            coordinatesRenderer = new GameObject("MapManager's Coordinate Renderer", typeof(Canvas), typeof(CoordinatesRenderer)).GetComponent<CoordinatesRenderer>();
+            coordinatesRenderer.transform.SetParent(this.transform, true);
 
             Instance = this;    // set the first instance of MapDataManager
 
@@ -120,13 +127,14 @@ namespace StorytellersTable.Map
         }
 
         /// <summary>
-        /// Add `TileData` to the active map, and generate's hex tile visual.
+        /// Add `TileData` to the active map, and generate's hex tile visual and label.
         /// </summary>
         /// <param name="data"></param>
         public void AddToActiveMap(TileData data)
         {
             ActiveMapData.tileDatas[data.hexCoord] = data;
             GenerateHexTileVisual(data);    // add hex tile visual
+            coordinatesRenderer.AddLabel(data);     // add hex pos label
         }
 
         #region Map visuals: generating, clearing
@@ -138,9 +146,14 @@ namespace StorytellersTable.Map
         {
             ClearActiveMapVisuals(); // clear the current map visuals before loading new ones
 
-            // Generate tile visuals
             foreach (var pair in mapData.tileDatas)
+            {
+                // Generate tile visuals
                 GenerateHexTileVisual(pair.Value);
+
+                // Generate hex coord labels
+                coordinatesRenderer.AddLabel(pair.Value);
+            }
 
             // Other visuals ...
         }
@@ -156,7 +169,10 @@ namespace StorytellersTable.Map
             // Destroy tile visuals
             foreach (Transform child in hexRendererParent.transform)
                 Destroy(child.gameObject);
-            
+
+            // Destroy hex position labels
+            coordinatesRenderer.ClearLabels();
+
             // other visuals ...
         }
 
@@ -173,6 +189,7 @@ namespace StorytellersTable.Map
             HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditMode.GenerateHexRenderer(data.hexCoord, tileMat);
             hexRenderer.transform.SetParent(hexRendererParent.transform, true);    // parent it
         }
+
         #endregion
 
         #region Map Layout, Debugging, and clearing graph
