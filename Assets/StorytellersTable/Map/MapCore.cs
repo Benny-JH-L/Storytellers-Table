@@ -11,7 +11,8 @@ namespace StorytellersTable.Core.Data
     public class TileData
     {
         public HexCoord hexCoord;
-        public int elevation;
+        public float yPos;          // the y-position of the tile, the x and z can be computed using HexCoord
+        public int height;          // Used in HexRenderer
         public string tileTypeId;   // ex. Grass, Water, Snow, Desert, etc..
 
         /// <summary>
@@ -21,17 +22,18 @@ namespace StorytellersTable.Core.Data
         /// </summary>
         public string targetNestedMapId;
 
-        public TileData(HexCoord hexCoord, int elevation = 0, string tileTypeId = "Grass")
+        public TileData(HexCoord hexCoord, float yPos, int height = 1, string tileTypeId = "Grass")
         {
+            this.yPos = yPos;
             this.hexCoord = hexCoord;
-            this.elevation = elevation;
+            this.height = height;
             this.tileTypeId = tileTypeId;
             targetNestedMapId = String.Empty;
         }
 
         public override string ToString()
         {
-            return $"HexCoord{hexCoord.ToString()} | elev[{elevation}] | tileType[{tileTypeId} | nestedMapTarget[{targetNestedMapId}]]";
+            return $"HexCoord{hexCoord.ToString()} | elev[{height}] | tileType[{tileTypeId} | nestedMapTarget[{targetNestedMapId}]]";
         }
 
         // HEAR ME OUT, TileBase contains all the data for World Tile, Stage Tile, and Floor tile, but only select stuff is shown based on map!

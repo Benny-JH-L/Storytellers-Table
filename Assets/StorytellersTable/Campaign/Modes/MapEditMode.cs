@@ -1,10 +1,11 @@
 ﻿
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.InputSystem;
 using StorytellersTable.Core.Data;
 using StorytellersTable.Map;
 using StorytellersTable.Utility.Log;
+using System.Collections.Generic;
+using System.Diagnostics;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -95,7 +96,7 @@ namespace StorytellersTable.Campaign.Modes
         void ICampaignMode.UpdateMode()
         {
             if (Keyboard.current.lKey.wasPressedThisFrame)
-                Debug.Log("Map edit - hi!!");
+                DebugOut.Log(this, "Map edit - hi!!");
 
             // Place unconfirmed tiles
             if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -186,7 +187,7 @@ namespace StorytellersTable.Campaign.Modes
             foreach (HexCoord tileCoord in _unconfirmedTilePos)
             {
                 // Set `placed` material
-                TileData newData = new TileData(tileCoord); // ensure you include other fields...
+                TileData newData = new TileData(tileCoord, GetPositionFromAxial(tileCoord).y); // ensure you include other fields...
                 MapManager.Instance.AddToActiveMap(newData);
 
                 //TileComponent tileComp = tile.GetComponent<TileComponent>();
@@ -241,12 +242,7 @@ namespace StorytellersTable.Campaign.Modes
         /// <param name="mapSize"></param>
         public static void LayoutMap(MapManager mapManager, Vector2Int mapSize, Material mat)
         {
-            //Graph graph = map.ActiveMapData.graph;
-
-            //if (graph == null)
-            //    map.ActiveMapData.graph = new Graph();
-
-            //graph.Clear();
+            Stopwatch sw = Stopwatch.StartNew();    // start timer
 
             // Generate a clean rectangular bound using axial loops
             for (int r = 0; r < mapSize.y; r++)
@@ -269,14 +265,13 @@ namespace StorytellersTable.Campaign.Modes
                     }
 
                     // Generate tile data, then add it to the map. 
-                    TileData newData = new TileData(hexCoord); // ENSURE YOU ADD THE OTHER DETAILS!
+                    TileData newData = new TileData(hexCoord, GetPositionFromAxial(hexCoord).y); // ENSURE YOU ADD THE OTHER DETAILS!
                     mapManager.AddToActiveMap(newData);
-
-                    //GameObject tile = _GenerateTile(hexCoord, mat);
-                    //graph[hexCoord] = tile;
-                    //tile.transform.SetParent(mapManager.transform, true);  // ensure the generated tile is parented to the map
                 }
             }
+
+            sw.Stop();  // stop timer
+            DebugOut.Log(typeof(MapEditMode), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
         }
 
         #region Tile Generation & World <-> Hex conversions
@@ -315,7 +310,7 @@ namespace StorytellersTable.Campaign.Modes
         {
             HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer)).GetComponent<HexRenderer>();
             // Set up where the visual's position in the world
-            hexRenderer.transform.position = _GetPositionFromAxial(hexCoord);
+            hexRenderer.transform.position = GetPositionFromAxial(hexCoord);
             // Set up HexRenderer
             hexRenderer.outerSize = outerSize;
             hexRenderer.innerSize = innerSize;
@@ -349,7 +344,7 @@ namespace StorytellersTable.Campaign.Modes
         /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.
         /// This removes all floating point tracking gaps and anchors the origin natively at (0,0,0).
         /// </summary>
-        private static Vector3 _GetPositionFromAxial(HexCoord coord)
+        public static Vector3 GetPositionFromAxial(HexCoord coord)
         {
             float xPosition = 0f;
             float zPosition = 0f;
@@ -439,11 +434,11 @@ namespace StorytellersTable.Campaign.Modes
 
             if (!_radialOn)
             {
-                Debug.Log("Map edit - Radial disabled");
+                DebugOut.Log(this, "Map edit - Radial disabled");
                 return;
             }
 
-            Debug.Log("Map edit - Radial enabled");
+            DebugOut.Log(this, "Map edit - Radial enabled");
         }
 
         /// <summary>
@@ -458,11 +453,11 @@ namespace StorytellersTable.Campaign.Modes
 
             if (!_areaOn)
             {
-                Debug.Log("Map edit - Area disabled");
+                DebugOut.Log(this, "Map edit - Area disabled");
                 return;
             }
 
-            Debug.Log("Map edit - Area enabled");
+            DebugOut.Log(this, "Map edit - Area enabled");
         }
 
         /// <summary>
@@ -477,11 +472,11 @@ namespace StorytellersTable.Campaign.Modes
 
             if (!_drawOn)
             {
-                Debug.Log("Map edit - draw disabled");
+                DebugOut.Log(this, "Map edit - draw disabled");
                 return;
             }
 
-            Debug.Log("Map edit - draw enabled");
+            DebugOut.Log(this, "Map edit - draw enabled");
         }
 
         /// <summary>
