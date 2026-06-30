@@ -74,7 +74,6 @@ namespace StorytellersTable.Campaign.Modes
             // Instantiate UI if it does not exist
             if (_uiPrefab != null && _runtimeUiInstance == null)
                 _runtimeUiInstance = Object.Instantiate(_uiPrefab, _uiParentTransform);
-            // logic to get the active scene's MapBase...
 
             _inputMap.Enable();
         }
@@ -139,9 +138,6 @@ namespace StorytellersTable.Campaign.Modes
 
                     // Create ghost visual at mouse's hex coord
                     GenerateGhostTile(mouseHexCoord, ghostMaterial);
-
-                    //GameObject newTile = _GenerateTile(mouseHexCoord, ghostMaterial);
-                    //_unconfirmedTiles.Add(newTile);
                 }
             }
             // If we can't get the mouse's world position do nothing.
@@ -189,9 +185,6 @@ namespace StorytellersTable.Campaign.Modes
                 // Set `placed` material
                 TileData newData = new TileData(tileCoord, GetPositionFromAxial(tileCoord).y); // ensure you include other fields...
                 MapManager.Instance.AddToActiveMap(newData);
-
-                //TileComponent tileComp = tile.GetComponent<TileComponent>();
-                //tileComp.HexRenderer.SetMaterial(placedMaterial);
 
                 //// Set parent of tile and add the tile to the active map 
                 ////tile.transform.SetParent(activeMap.transform, true);
@@ -275,36 +268,6 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         #region Tile Generation & World <-> Hex conversions
-        /// <summary>
-        /// Generates a hex tile at the specified hex axial, q & r, coordinate, and places it at the converted world space position, 
-        /// then adds it to the map's adjacency list.
-        /// </summary>
-        /// <param name="hexCoord"></param>
-        /// <param name="mat"></param>
-        /// <returns></returns>
-        //private static GameObject _GenerateTile(HexCoord hexCoord, Material mat)
-        //{
-        //    // Create GameObject with HexRenderer and TileComponent
-        //    GameObject tile = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer), typeof(TileComponent));
-        //    tile.transform.position = _GetPositionFromAxial(hexCoord);
-
-        //    // Set up HexRenderer
-        //    HexRenderer hexRenderer = tile.GetComponent<HexRenderer>();
-        //    hexRenderer.outerSize = outerSize;
-        //    hexRenderer.innerSize = innerSize;
-        //    hexRenderer.height = height;
-        //    hexRenderer.isFlatTopped = isFlatTopped;
-        //    hexRenderer.SetMaterial(mat);
-        //    hexRenderer.DrawMesh();
-        //    hexRenderer.SetHexText(hexCoord);
-
-        //    // Set up and bridge the tile data context
-        //    TileData tileData = new TileData(hexCoord);
-        //    TileComponent tileComponent = tile.GetComponent<TileComponent>();
-        //    tileComponent.Setup(tileData);
-
-        //    return tile;
-        //}
 
         public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat)
         {
@@ -326,18 +289,6 @@ namespace StorytellersTable.Campaign.Modes
         {
             return GenerateHexRenderer(WorldToAxial(worldPos), mat);
         }
-
-        ///// <summary>
-        ///// Generates a hex tile at the worldPos converted to specified hex axial, q & r, coordinate, and places it at the converted world space position, 
-        ///// then adds it to the map's adjacency list.
-        ///// </summary>
-        ///// <param name="worldPos"></param>
-        ///// <param name="mat"></param>
-        ///// <returns></returns>
-        //private static GameObject _GenerateTile(Vector3 worldPos, Material mat)
-        //{
-        //    return _GenerateTile(WorldToAxial(worldPos), mat);
-        //}
 
         /// <summary>
         /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.
