@@ -1,7 +1,7 @@
 ﻿
-using StorytellersTable.Map;
 using UnityEditor;
 using UnityEngine;
+using StorytellersTable.Renderer;
 
 [CustomEditor((typeof(CoordinatesRenderer)), true)]
 public class CoordinateRendererEditor : Editor

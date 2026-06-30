@@ -4,7 +4,7 @@ using StorytellersTable.Core.Data;
 using UnityEngine;
 using TMPro;
 
-namespace StorytellersTable.Map
+namespace StorytellersTable.Renderer
 {
     /// <summary>
     /// Handles axial (hex) coordinate visuals.

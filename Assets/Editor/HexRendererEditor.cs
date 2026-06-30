@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor;
 using UnityEngine;
+using StorytellersTable.Renderer;
 
 [CustomEditor(typeof(HexRenderer), true)]
 public class HexRendererEditor : Editor

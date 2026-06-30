@@ -2,6 +2,7 @@
 using StorytellersTable.Core.Data;
 using StorytellersTable.Map;
 using StorytellersTable.Utility.Log;
+using StorytellersTable.Renderer;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;

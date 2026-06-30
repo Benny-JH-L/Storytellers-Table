@@ -1,8 +1,8 @@
 ﻿
 using StorytellersTable.Core.Data;
 using StorytellersTable.Utility.Log;
+using StorytellersTable.Renderer;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 namespace StorytellersTable.Map
@@ -18,9 +18,9 @@ namespace StorytellersTable.Map
         [SerializeField] public Vector2Int defaultMapSize = new Vector2Int(5, 5);
 
         // used to store hex tile visual
-        [SerializeField] private GameObject hexRendererParent;
+        [SerializeField] public GameObject hexRendererParent;
         // handles axial coordinate visuals of tiles in the map
-        [SerializeField] private CoordinatesRenderer coordinatesRenderer;
+        [SerializeField] public CoordinatesRenderer coordinatesRenderer;
 
         private readonly static string simulatedSwitch = "1";   // simulates map switching id
 
