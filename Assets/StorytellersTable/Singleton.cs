@@ -1,9 +1,11 @@
 ﻿
 using UnityEngine;
+using StorytellersTable.Utility.Log;
 
 /// <summary>
 /// Singleton that holds data that's used across files.
 /// </summary>
+[DefaultExecutionOrder(-100)]   // ensure this is exectued first, so other classes can access this
 [DisallowMultipleComponent]
 public class Singleton : MonoBehaviour
 {
@@ -20,6 +22,8 @@ public class Singleton : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
+        DebugOut.Log(this, "Awake()");
 
         Instance = this;
     }
