@@ -111,7 +111,7 @@ namespace StorytellersTable.Campaign.Modes
             HexCoord mouseHexCoord;
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
 
-            if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask)) // right now this only works when it hits something in the world, try to use the `plane` strat instead.
+            if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask))
             {
                 mouseHexCoord = WorldToAxial(hit.point);
                 //Debug.Log($"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
@@ -268,7 +268,7 @@ namespace StorytellersTable.Campaign.Modes
             DebugOut.Log(typeof(MapEditMode), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
         }
 
-        #region Tile Generation & World <-> Hex conversions
+        #region Tile Visual Generation & World <-> Hex conversions
 
         public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat)
         {
