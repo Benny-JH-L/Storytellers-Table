@@ -68,7 +68,8 @@ namespace StorytellersTable.Renderer
             tmpGUI.alignment = TextAlignmentOptions.Center;
 
             // Set text
-            tmpGUI.text = $"{hexCoord.q}\n{hexCoord.r}";
+            //tmpGUI.text = $"{hexCoord.q}\n{hexCoord.r}";
+            tmpGUI.text = $"{hexCoord.q}\n{hexCoord.r}\n{hexCoord.ToCube().s}";
 
             tmpGUI.enabled = showLabels;
             _hexLabels[hexCoord] = tmpGUI;

@@ -22,6 +22,7 @@ public struct HexCoord : IEquatable<HexCoord>
         r = r_;
     }
 
+    #region operators
     public static HexCoord operator +(HexCoord h1, HexCoord h2)
     {
         return new HexCoord(h1.q + h2.q, h1.r + h2.r);
@@ -30,6 +31,16 @@ public struct HexCoord : IEquatable<HexCoord>
     public static HexCoord operator -(HexCoord h1, HexCoord h2)
     {
         return new HexCoord(h1.q - h2.q, h1.r - h2.r);
+    }
+
+    public static HexCoord operator *(HexCoord h1, HexCoord h2)
+    {
+        return new HexCoord(h1.q * h2.q, h1.r * h2.r);
+    }
+
+    public static HexCoord operator *(HexCoord h1, int scale)
+    {
+        return new HexCoord(h1.q * scale, h1.r * scale);
     }
 
     public static bool operator ==(HexCoord left, HexCoord right)
@@ -42,12 +53,24 @@ public struct HexCoord : IEquatable<HexCoord>
         return !(left == right);
     }
 
+    #endregion
+
+    public static string ListToString(List<HexCoord> list)
+    {
+        string s = string.Empty;
+        foreach (HexCoord hexCoord in list)
+            s += hexCoord.ToString() + ", ";
+        return s;
+    }
+
     ///// <summary>
     ///// Convert from axial Hex coordinate to cube coordinate
     ///// </summary>
     ///// <param name="hexCoord"></param>
     ///// <returns></returns>
     public static CubeCoord ToCube(HexCoord hexCoord) => new CubeCoord(hexCoord.q, hexCoord.r);
+
+    public CubeCoord ToCube() => new CubeCoord(q, r);
 
     public override int GetHashCode()
     {
@@ -86,6 +109,7 @@ public struct CubeCoord
     /// <param name="cubeCoord"></param>
     /// <returns></returns>
     public static HexCoord ToAxial(CubeCoord cubeCoord) => new HexCoord(cubeCoord.q, cubeCoord.r);
+    public HexCoord ToAxial() => new HexCoord(q, r);
 
     public override string ToString()
     {

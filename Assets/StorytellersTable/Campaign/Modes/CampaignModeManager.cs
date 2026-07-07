@@ -30,7 +30,7 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private ModeManagerAction _modeManagerActions;
 
         [Header("Other")]
-        
+        [SerializeField] public MapEditSO mapEditSettings;
 
         private Dictionary<CampaignModeType, ICampaignMode> _modes; // map the campaign type to an instance to manage its logic
         private ICampaignMode _currentMode;

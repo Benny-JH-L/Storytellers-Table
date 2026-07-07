@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Linq;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -32,7 +33,8 @@ namespace StorytellersTable.Campaign.Modes
         private readonly MapEditAction _inputMap;
 
         [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode
-        public MapData activeMap => MapManager.Instance.ActiveMapData;
+        private MapData activeMap => MapManager.Instance.ActiveMapData;
+        private CampaignModeManager _modeManager => CampaignModeManager.Instance;
 
         // tiles that are not placed, where potential placement is visually shown.
         [SerializeField] private List<HexCoord> _unconfirmedTilePos;
@@ -114,7 +116,7 @@ namespace StorytellersTable.Campaign.Modes
             if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask))
             {
                 mouseHexCoord = WorldToAxial(hit.point);
-                //Debug.Log($"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
+                //DebugOut.Log(this, $"Hit Point: {hit.point} | Mouse Axial: {mouseHexCoord}");
 
                 // Check if there's existing tile data (non null) at that hex position of the map
                 if (activeMap.tileDatas.TryGetValue(mouseHexCoord, out TileData tileData))
@@ -138,7 +140,7 @@ namespace StorytellersTable.Campaign.Modes
                     _unconfirmedTilePos.Add(mouseHexCoord);
 
                     // Create ghost visual at mouse's hex coord
-                    GenerateGhostTile(mouseHexCoord, ghostMaterial);
+                    //GenerateGhostTile(mouseHexCoord, ghostMaterial);
                 }
             }
             // If we can't get the mouse's world position do nothing.
@@ -149,8 +151,7 @@ namespace StorytellersTable.Campaign.Modes
 
             if (_radialOn)
             {
-                // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
-
+                HexMath.GetHexRingArea(mouseHexCoord, _modeManager.mapEditSettings.radius, _unconfirmedTilePos);
             }
             else if (_areaOn)
             {
@@ -162,6 +163,26 @@ namespace StorytellersTable.Campaign.Modes
                 // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
 
             }
+
+            //DebugOut.Log(this, $"before purge: "+ HexCoord.ListToString(_unconfirmedTilePos));
+
+            // remove duplicate positions
+            _unconfirmedTilePos.ToHashSet().ToList();
+
+            // Remove the hex positions from _unconfirmedTilePos that exist on the map already (ie are placed tiles)
+            foreach (var pair in activeMap.tileDatas)
+            {
+                if (_unconfirmedTilePos.Contains(pair.Key))
+                    _unconfirmedTilePos.Remove(pair.Key);
+            }
+
+            //DebugOut.Log(this, $"after purge: " + HexCoord.ListToString(_unconfirmedTilePos));
+
+
+            // Create ghost visual for unconfirmed tiles
+            foreach (HexCoord hexCoord in _unconfirmedTilePos)
+                GenerateGhostTile(hexCoord, ghostMaterial);
+
         }
 
         /// <summary>
