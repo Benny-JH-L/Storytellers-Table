@@ -98,7 +98,7 @@ namespace StorytellersTable
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
         public static void GetHexRingArea(HexCoord center, int radius, List<HexCoord> results)
         {
-            for (int currRadius = 1; currRadius < radius; currRadius++)
+            for (int currRadius = 1; currRadius <= radius; currRadius++)
             {
                 GetHexRing(center, currRadius, results);
             }
