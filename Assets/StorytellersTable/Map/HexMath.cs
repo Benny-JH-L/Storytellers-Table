@@ -1,6 +1,9 @@
 ﻿
 using StorytellersTable.Core.Data;
+using StorytellersTable.Utility.Log;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace StorytellersTable
 {
@@ -102,23 +105,27 @@ namespace StorytellersTable
         }
 
         /// <summary>
-        /// Calculates all hex coordinates between <paramref name="start"/> and <paramref name="end"/>.
+        /// Calculates all hex coordinates between <paramref name="start"/> and <paramref name="end"/>, based on axial coordinates q, r.
         /// </summary>
         /// <param name="start">The starting axial coordinate. Must be different from <paramref name="end"/>.</param>
         /// <param name="end">The ending axial coordinate. Must be different from <paramref name="start"/>.</param>
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
-        public static void GetArea(HexCoord start, HexCoord end, List<HexCoord> results)
+        public static void GetAreaAxial(HexCoord start, HexCoord end, List<HexCoord> results)
         {
             if (start == end)
                 return;
 
             // define boundry of the area, regardless of where start and end are located from each other
-            int startQ = start.q > end.q ? start.q : end.q;
-            int endQ = end.q > start.q ? end.q : start.q;
-            int startR = start.r > end.r ? start.r : end.r;
-            int endR = end.r > start.r ? end.r : start.r;
+            int minQ = Mathf.Min(start.q, end.q);
+            int maxQ = Mathf.Max(start.q, end.q);
+            int minR = Mathf.Min(start.r, end.r);
+            int maxR = Mathf.Max(start.r, end.r);
 
-
+            for (int q = minQ; q <= maxQ; q++)
+            {
+                for (int r = minR; r <= maxR; r++)
+                    results.Add(new HexCoord(q, r));
+            }
         }
 
         #endregion
