@@ -17,6 +17,9 @@ c: cycle between modes
 
 # Map Edit #
 left mouse click: confirm tile placement
+r:  toggle radial placement
+f:  toggle area placement
+t:  toggle draw placement
 
 # Entity Edit #
 
