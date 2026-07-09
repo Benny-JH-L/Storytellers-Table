@@ -14,6 +14,7 @@ public class Singleton : MonoBehaviour
     [Header("Tile")]
     public Material defaultTileMaterial;
     public Material ghostTileMaterial;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
+    public Material ghostTileMaterial2;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
 
     private void Awake()
     {

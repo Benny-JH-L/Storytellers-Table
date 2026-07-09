@@ -1,13 +1,17 @@
 ﻿
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+
 using StorytellersTable.Core.Data;
 using StorytellersTable.Map;
 using StorytellersTable.Utility.Log;
 using StorytellersTable.Renderer;
-using System.Collections.Generic;
-using System.Diagnostics;
+using StorytellersTable.UiLogic;
+
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Linq;
+using UnityEngine.EventSystems;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -16,6 +20,20 @@ namespace StorytellersTable.Campaign.Modes
     /// </summary>
     public class MapEditMode : ICampaignMode
     {
+        /// <summary>
+        /// Stores data to track the state of area placement mode
+        /// </summary>
+        private class AreaEditData
+        {
+            public HexCoord AreaPlaceStart { get; set; }
+            public bool startDefined; // states if `AreaPlaceStart` has been set
+
+            public AreaEditData() 
+            {
+                startDefined = false;
+            }
+        }
+
         // Raycast to this layer to place tiles
         public static LayerMask mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
         public static float raycastMaxDistance = 500f;
@@ -27,39 +45,64 @@ namespace StorytellersTable.Campaign.Modes
         public static bool isFlatTopped;
         public static Material placedMaterial;       // material of placed tiles --> set based on UI
         public static Material ghostMaterial;
+        public static Material confirmedMaterial;
 
         private readonly GameObject _uiPrefab;
         private readonly Transform _uiParentTransform;
         private readonly MapEditAction _inputMap;
 
-        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode
+        private readonly GameObject _confirmPlacementPrefab;
+
+        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
+        [SerializeField] private GameObject _runtimeConfirmPlacementUi;
+        [SerializeField] private List<GameObject> _listRuntimeUi;   // list of runtime Ui
+
         private MapData activeMap => MapManager.Instance.ActiveMapData;
         private CampaignModeManager _modeManager => CampaignModeManager.Instance;
 
-        // tiles that are not placed, where potential placement is visually shown.
+        /*
+         * tiles that are not placed, where potential placement is visually shown.
+         * there are 2 states:
+         * 1) ghost tiles, based on immediate user input (unconfirmed tiles)
+         * 2) confirmed tiles, based from user input and the current ghost tiles. These tiles will be placed on the map.
+        */
+        [SerializeField] private List<HexCoord> _confirmedTilePos;          // contains tiles to potentially place, they do not exist in the map data yet.
         [SerializeField] private List<HexCoord> _unconfirmedTilePos;
+        [SerializeField] private List<HexRenderer> _confirmedTileVisuals;
         [SerializeField] private List<HexRenderer> _unconfirmedTileVisuals;
+        [SerializeField] private GameObject _confirmedTileVisualsParent;    // confirmed tiles will be parented to this
         [SerializeField] private GameObject _unconfirmedTileVisualsParent;  // ghost tiles will be parented to this
 
         // track different placement types (only one may be enabled at a time)
         private bool _radialOn, _areaOn, _drawOn;
+        private AreaEditData areaEditData;
 
         public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
         {
             _uiPrefab = uiPrefab;
             _uiParentTransform = uiParent;
             _inputMap = inputMap;
+            _confirmPlacementPrefab = Resources.Load<GameObject>("UI/MapEdit/CancelConfirmBtn");
 
             _runtimeUiInstance = null;
+            _runtimeConfirmPlacementUi = null;
+            _listRuntimeUi = new List<GameObject>();
 
+            _confirmedTilePos = new List<HexCoord>();
             _unconfirmedTilePos = new List<HexCoord>();
+
             _unconfirmedTileVisuals = new List<HexRenderer>();
+            _confirmedTileVisuals = new List<HexRenderer>();
+
             _unconfirmedTileVisualsParent = new GameObject("MapEdit - Unconfirmed_Tile_Visuals");
             _unconfirmedTileVisualsParent.transform.SetParent(CampaignModeManager.Instance.transform, true);
+            _confirmedTileVisualsParent = new GameObject("MapEdit - Confirmed_Tile_Visuals");
+            _confirmedTileVisualsParent.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
             // Set initial materials
             placedMaterial = Singleton.Instance.defaultTileMaterial;
             ghostMaterial = Singleton.Instance.ghostTileMaterial;
+            confirmedMaterial = Singleton.Instance.ghostTileMaterial2;
 
             _radialOn = false;
             _areaOn = false;
@@ -70,13 +113,18 @@ namespace StorytellersTable.Campaign.Modes
             _inputMap.Edit.EnableArea.performed += ToggleArea;
             _inputMap.Edit.EnableDraw.performed += ToggleDraw;
             // add call backs to input map...
+
+            areaEditData = new AreaEditData();
         }
 
         void ICampaignMode.Enter()
         {
             // Instantiate UI if it does not exist
             if (_uiPrefab != null && _runtimeUiInstance == null)
+            {
                 _runtimeUiInstance = Object.Instantiate(_uiPrefab, _uiParentTransform);
+                _listRuntimeUi.Add(_runtimeUiInstance);
+            }
 
             _inputMap.Enable();
         }
@@ -85,34 +133,33 @@ namespace StorytellersTable.Campaign.Modes
         {
             _inputMap.Disable();            // disable input for this mode
 
-            if (_runtimeUiInstance != null) // clean up
-            {
-                Object.Destroy(_runtimeUiInstance);
-                _runtimeUiInstance = null;
-            }
+            // clean up all runtime Ui
+            foreach (GameObject obj in _listRuntimeUi)
+                Object.Destroy(obj);
 
-            // Clean up ghost tiles
+            _runtimeUiInstance = null;
+            _runtimeConfirmPlacementUi = null;
+            _listRuntimeUi.Clear();
+
+            // Clean up tiles visuals
             _DestroyUnconfirmedTiles();
+            _DestoryConfirmedTiles();
         }
 
         void ICampaignMode.UpdateMode()
         {
-            if (Keyboard.current.lKey.wasPressedThisFrame)
-                DebugOut.Log(this, "Map edit - hi!!");
-
-            // Place unconfirmed tiles
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                PlaceUnconfirmedTiles();
+            // Check if the mouse is over a UI element, if so do nothing 
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
-            }
 
+            // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
             _DestroyUnconfirmedTiles();
 
             // Get mouse's hex coordinate based on world position 
             HexCoord mouseHexCoord;
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
 
+            #region Get mouse hex coord from world pos
             if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, mapEditLayerMask))
             {
                 mouseHexCoord = WorldToAxial(hit.point);
@@ -122,67 +169,116 @@ namespace StorytellersTable.Campaign.Modes
                 if (activeMap.tileDatas.TryGetValue(mouseHexCoord, out TileData tileData))
                 {
                     //DebugOut.Log(this, $"Hovering over tile: {tileData.ToString()}");
-
-
-                    // OLD
-                    //TileComponent tileComp = tileData.GetComponent<TileComponent>();
-                    //Debug.Log($"Hover over | existing tile: {tileComp.GetData<TileBase>().GetType().Name} at coord: {tileComp.HexCoord}");
-
-                    // highlight the tile
-                    //_highlightTile(tileComp);
                 }
                 // No tile exists at the specified hex coord
                 else
                 {
                     //WarningOut.Log(this, $"Hit registered at {mouseHexCoord}, but no matching tile key was found in the dictionary.");
-
-                    // Add unconfirmed position
-                    _unconfirmedTilePos.Add(mouseHexCoord);
-
-                    // Create ghost visual at mouse's hex coord
-                    //GenerateGhostTile(mouseHexCoord, ghostMaterial);
                 }
             }
             // If we can't get the mouse's world position do nothing.
             else
                 return;
+            #endregion
 
-            // For special placement settings: Radial, Area, and Draw.
+            // Add unconfirmed position at mouse position
+            _unconfirmedTilePos.Add(mouseHexCoord);
 
+            // Calculate unconfirmed tiles for placement settings: Radial, Area, and Draw.
             if (_radialOn)
             {
                 HexMath.GetHexRingArea(mouseHexCoord, _modeManager.mapEditSettings.radius, _unconfirmedTilePos);
             }
-            else if (_areaOn)
+            else if (_areaOn && areaEditData.startDefined)
             {
-                // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
-
+                HexMath.GetAreaAxial(areaEditData.AreaPlaceStart, mouseHexCoord, _unconfirmedTilePos);
             }
             else if (_drawOn)
             {
                 // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
-
             }
 
             //DebugOut.Log(this, $"before purge: "+ HexCoord.ListToString(_unconfirmedTilePos));
 
             // remove duplicate positions
-            _unconfirmedTilePos.ToHashSet().ToList();
+            _unconfirmedTilePos = _unconfirmedTilePos.ToHashSet().ToList();
 
-            // Remove the hex positions from _unconfirmedTilePos that exist on the map already (ie are placed tiles)
+            // Remove duplicate hex positions from _unconfirmedTilePos that exist on the map already (ie are placed tiles)
             foreach (var pair in activeMap.tileDatas)
             {
                 if (_unconfirmedTilePos.Contains(pair.Key))
                     _unconfirmedTilePos.Remove(pair.Key);
             }
 
-            //DebugOut.Log(this, $"after purge: " + HexCoord.ListToString(_unconfirmedTilePos));
+            // Remove duiplicate hex positions that already exist in confirmed tiles
+            foreach (HexCoord pos in _confirmedTilePos)
+            {
+                if (_unconfirmedTilePos.Contains(pos))
+                    _unconfirmedTilePos.Remove(pos);
+            }
 
+            //DebugOut.Log(this, $"after purge: " + HexCoord.ListToString(_unconfirmedTilePos));
 
             // Create ghost visual for unconfirmed tiles
             foreach (HexCoord hexCoord in _unconfirmedTilePos)
-                GenerateGhostTile(hexCoord, ghostMaterial);
+                GenerateGhostTile(hexCoord, ghostMaterial, _unconfirmedTileVisualsParent.transform, _unconfirmedTileVisuals);
 
+            // Update confirmed tiles
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                if (_areaOn)
+                {
+                    // Set the starting position
+                    if (!areaEditData.startDefined)
+                    {
+                        areaEditData.AreaPlaceStart = mouseHexCoord;
+                        areaEditData.startDefined = true;
+                    }
+                    // Deselect the start if clicked again
+                    else if (areaEditData.startDefined && areaEditData.AreaPlaceStart == mouseHexCoord)
+                        areaEditData.startDefined = false;
+                    // Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
+                    else
+                    {
+                        UpdateConfirmedTiles();
+                        areaEditData.startDefined = false;
+                    }
+                }
+                else
+                {
+                    UpdateConfirmedTiles();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the repsective lists of confirmed tiles with the respective lists of unconfirmed tiles.
+        /// Essentially transfering all the data from unconfirmed tile lists to confirmed tile lists counterparts.
+        /// </summary>
+        private void UpdateConfirmedTiles()
+        {
+            if (_unconfirmedTilePos.Count == 0)
+                return;
+
+            // Add the visuals and hex coords to their respective confirmed tile lists
+            _confirmedTileVisuals.AddRange(_unconfirmedTileVisuals);
+            _confirmedTilePos.AddRange(_unconfirmedTilePos);
+
+            // load confimation ui
+            LoadConfirmCancelUi();
+
+            // Update hex visual
+            foreach (HexRenderer hexRenderer in _confirmedTileVisuals)
+            {
+                // Instead of destroying and recreating visuals, we can reparent them
+                hexRenderer.transform.SetParent(_confirmedTileVisualsParent.transform, true);
+                // Set a new material for better visualization
+                hexRenderer.SetMaterial(confirmedMaterial);
+            }
+
+            // Clear the unconfirmed tiles of references
+            _unconfirmedTileVisuals.Clear();
+            _unconfirmedTilePos.Clear();
         }
 
         /// <summary>
@@ -190,34 +286,53 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         /// <param name="hexCoord"></param>
         /// <param name="ghostMat"></param>
-        private void GenerateGhostTile(HexCoord hexCoord, Material ghostMat)
+        /// <param name="hexVisualParent"></param>
+        /// <param name="result"></param>
+        private void GenerateGhostTile(HexCoord hexCoord, Material ghostMat, Transform hexVisualParent, List<HexRenderer> result)
         {
             HexRenderer ghostVisual = GenerateHexRenderer(hexCoord, ghostMat);
-            ghostVisual.transform.SetParent(_unconfirmedTileVisualsParent.transform, true);
-            _unconfirmedTileVisuals.Add(ghostVisual);
+            ghostVisual.transform.SetParent(hexVisualParent, true);
+            result.Add(ghostVisual);
         }
 
         /// <summary>
         /// Places all unconfirmed tiles to the active map.
         /// </summary>
-        private void PlaceUnconfirmedTiles()
+        private void _PlaceConfirmedTiles()
         {
-            foreach (HexCoord tileCoord in _unconfirmedTilePos)
+            _confirmedTilePos = _confirmedTilePos.ToHashSet().ToList();
+            foreach (HexCoord tileCoord in _confirmedTilePos)
             {
                 // Set `placed` material
                 TileData newData = new TileData(tileCoord, GetPositionFromAxial(tileCoord).y); // ensure you include other fields...
                 MapManager.Instance.AddToActiveMap(newData);
-
-                //// Set parent of tile and add the tile to the active map 
-                ////tile.transform.SetParent(activeMap.transform, true);
-                //tile.transform.SetParent(MapManager.Instance.transform, true);
-                //activeMap.graph[tileComp.tileData.hexCoord] = tile;
             }
 
             // Clean up, MapManger will generate the placed tiles' visuals
-            _DestroyUnconfirmedTiles();
+            _DestoryConfirmedTiles();
 
             return;
+        }
+
+        #region tile placement/destruction
+
+        /// <summary>
+        /// Places tiles onto the map from the confirmed tiles list.
+        /// </summary>
+        private void ConfirmTilePlacement()
+        {
+            _PlaceConfirmedTiles();
+            DestroyConfirmPlacementUi();
+        }
+
+        /// <summary>
+        /// Removes tile visuals and related data from the screen.
+        /// </summary>
+        private void CancelTilePlacement()
+        {
+            _DestoryConfirmedTiles();
+            _DestroyUnconfirmedTiles();
+            DestroyConfirmPlacementUi();
         }
 
         /// <summary>
@@ -234,60 +349,22 @@ namespace StorytellersTable.Campaign.Modes
             _unconfirmedTilePos.Clear();
         }
 
-        //private void _highlightTile(TileComponent tileComp)
-        //{
-        //    // code here
-        //    // could make a tile just slightly larger than the target tile and make it light a light blue shade that's like 20% opacity or something
-        //    // which is enabled/disabled and moved to target tiles position
-        //}
-
         /// <summary>
-        /// Change the material of the next newly placed tiles.
+        /// Destroys the list of confirmed tile visuals and positions.
         /// </summary>
-        /// <param name="newMat"></param>
-        public void SetPlacedMaterial(Material newMat)
+        private void _DestoryConfirmedTiles()
         {
-            placedMaterial = newMat;
-        }
-
-        /// <summary>
-        /// Generates a map using q, and r. q is the length of the map, and r is the height of the map.
-        /// </summary>
-        /// <param name="mapManager"></param>
-        /// <param name="mapSize"></param>
-        public static void LayoutMap(MapManager mapManager, Vector2Int mapSize, Material mat)
-        {
-            Stopwatch sw = Stopwatch.StartNew();    // start timer
-
-            // Generate a clean rectangular bound using axial loops
-            for (int r = 0; r < mapSize.y; r++)
+            foreach (HexRenderer hexRenderer in _confirmedTileVisuals)
             {
-                // Calculate the row offset dynamically to slice a straight vertical edge
-                int offset = Mathf.FloorToInt(r / 2f);
-
-                for (int q = -offset; q < mapSize.x - offset; q++)
-                {
-                    // Capture the exact true coordinates
-                    HexCoord hexCoord = new HexCoord(q, r);
-
-                    // If flat-topped, the coordinate mapping swaps columns/rows for the offset orientation
-                    if (MapEditMode.isFlatTopped)
-                    {
-                        int qFlat = r;
-                        int offsetFlat = Mathf.FloorToInt(qFlat / 2f);
-                        int rFlat = q;
-                        hexCoord = new HexCoord(qFlat, rFlat + offsetFlat);
-                    }
-
-                    // Generate tile data, then add it to the map. 
-                    TileData newData = new TileData(hexCoord, GetPositionFromAxial(hexCoord).y); // ENSURE YOU ADD THE OTHER DETAILS!
-                    mapManager.AddToActiveMap(newData);
-                }
+                if (hexRenderer != null)
+                    Object.Destroy(hexRenderer.gameObject);
             }
 
-            sw.Stop();  // stop timer
-            DebugOut.Log(typeof(MapEditMode), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
+            _confirmedTileVisuals.Clear();
+            _confirmedTilePos.Clear();
         }
+
+        #endregion
 
         #region Tile Visual Generation & World <-> Hex conversions
 
@@ -462,6 +539,88 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         // functions for Input Action call backs...
+
+        #endregion
+
+        #region UI backend
+
+        /// <summary>
+        /// Instantiates a gameobject from the prefab, `_confirmPlacementPrefab`, only one may exist.
+        /// </summary>
+        private void LoadConfirmCancelUi()
+        {
+            if (_runtimeConfirmPlacementUi != null)
+                return;
+
+            GameObject obj = Object.Instantiate(_confirmPlacementPrefab, _uiParentTransform);
+            MapEditCancelConfirm ui = obj.GetComponent<MapEditCancelConfirm>();
+
+            ui.cancelBtn.onClick.AddListener(CancelTilePlacement);
+            ui.confirmBtn.onClick.AddListener(ConfirmTilePlacement);
+
+            _runtimeConfirmPlacementUi = obj;
+            _listRuntimeUi.Add(obj);
+        }
+
+        /// <summary>
+        /// Destroys the runtime ui, `_runtimeConfirmPlacementUi`.
+        /// </summary>
+        private void DestroyConfirmPlacementUi()
+        {
+            Object.Destroy(_runtimeConfirmPlacementUi);
+            _runtimeConfirmPlacementUi = null;
+        }
+
+        #endregion
+
+        #region misc: LayoutMap(), SetPlacedMaterial()
+        /// <summary>
+        /// Change the material of the next newly placed tiles.
+        /// </summary>
+        /// <param name="newMat"></param>
+        public void SetPlacedMaterial(Material newMat)
+        {
+            placedMaterial = newMat;
+        }
+
+        /// <summary>
+        /// Generates a map using q, and r. q is the length of the map, and r is the height of the map.
+        /// </summary>
+        /// <param name="mapManager"></param>
+        /// <param name="mapSize"></param>
+        public static void LayoutMap(MapManager mapManager, Vector2Int mapSize, Material mat)
+        {
+            Stopwatch sw = Stopwatch.StartNew();    // start timer
+
+            // Generate a clean rectangular bound using axial loops
+            for (int r = 0; r < mapSize.y; r++)
+            {
+                // Calculate the row offset dynamically to slice a straight vertical edge
+                int offset = Mathf.FloorToInt(r / 2f);
+
+                for (int q = -offset; q < mapSize.x - offset; q++)
+                {
+                    // Capture the exact true coordinates
+                    HexCoord hexCoord = new HexCoord(q, r);
+
+                    // If flat-topped, the coordinate mapping swaps columns/rows for the offset orientation
+                    if (MapEditMode.isFlatTopped)
+                    {
+                        int qFlat = r;
+                        int offsetFlat = Mathf.FloorToInt(qFlat / 2f);
+                        int rFlat = q;
+                        hexCoord = new HexCoord(qFlat, rFlat + offsetFlat);
+                    }
+
+                    // Generate tile data, then add it to the map. 
+                    TileData newData = new TileData(hexCoord, GetPositionFromAxial(hexCoord).y); // ENSURE YOU ADD THE OTHER DETAILS!
+                    mapManager.AddToActiveMap(newData);
+                }
+            }
+
+            sw.Stop();  // stop timer
+            DebugOut.Log(typeof(MapEditMode), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
+        }
 
         #endregion
     }

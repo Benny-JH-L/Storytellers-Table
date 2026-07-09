@@ -329,6 +329,7 @@ MonoBehaviour:
   _mapEditUiPrefab: {fileID: 6086424774650633340, guid: e66329ba651ab254793fa5cecf5162d4, type: 3}
   _entityEditUiPrefab: {fileID: 6086424774650633340, guid: 9a34ead84f2c6b24e8f762c70fa40a4b, type: 3}
   _playUiPrefab: {fileID: 6086424774650633340, guid: 1a7c7622fb7e81d4cba87075d95e2acd, type: 3}
+  mapEditSettings: {fileID: 11400000, guid: 7817c4fb162609c40ac360dc3c621c8d, type: 2}
 --- !u!4 &308999769
 Transform:
   m_ObjectHideFlags: 0
@@ -764,6 +765,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Singleton
   defaultTileMaterial: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
   ghostTileMaterial: {fileID: 4874126678125670354, guid: ea6184a8c218b5e4b83aece7f86d7715, type: 3}
+  ghostTileMaterial2: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -842,7 +844,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c696bce7729ccf48818abe96a0d7add, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Map.MapManager
-  defaultMapSize: {x: 3, y: 3}
+  defaultMapSize: {x: 5, y: 5}
   hexRendererParent: {fileID: 0}
   coordinatesRenderer: {fileID: 0}
 --- !u!4 &1022669222
@@ -1100,7 +1102,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -1179,8 +1181,8 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 1179449150}
-  - {fileID: 1022669222}
   - {fileID: 1457949020}
+  - {fileID: 1022669222}
   - {fileID: 308999769}
   - {fileID: 195430108}
   - {fileID: 133416157}

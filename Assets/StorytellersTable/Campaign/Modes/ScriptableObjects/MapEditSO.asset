@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd58db18ce75be740b466a60d2a608be, type: 3}
   m_Name: MapEditSO
   m_EditorClassIdentifier: Assembly-CSharp::MapEditSO
+  radius: 5
