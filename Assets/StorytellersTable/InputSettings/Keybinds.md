@@ -16,10 +16,13 @@ Middle mouse without shift, or ctr/command keys pressed:	camera rotation
 c: cycle between modes
 
 # Map Edit #
-left mouse click: confirm tile placement
-r:  toggle radial placement
-f:  toggle area placement
-t:  toggle draw placement
+left mouse click: select tile
+1:  toggle single select
+2:  toggle radial select
+3:  toggle area select
+4:  toggle draw select
+`:  clear selected tiles
+-:  toggle's tile removal (if toggled off, tile place is enabled)
 
 # Entity Edit #
 
