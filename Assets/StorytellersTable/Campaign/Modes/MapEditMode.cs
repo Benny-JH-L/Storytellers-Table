@@ -30,157 +30,12 @@ namespace StorytellersTable.Campaign.Modes
             public HexCoord AreaEditStart { get; set; }
             public bool startDefined; // states if `AreaPlaceStart` has been set
 
-            public AreaEditData() 
+            public AreaEditData()
             {
                 startDefined = false;
             }
         }
 
-        /// <summary>
-        /// Encapsulates placement, edit, and removal mode selection.
-        /// </summary>
-        [Serializable]
-        private class EditModes
-        {
-            /// Tracks which mode is enabled; removal, edit, or placement of tiles or labels. Only one is enabled at a time.
-            public bool TileRemoveOn { get; private set; }
-            public bool LabelRemoveOn { get; private set; }
-            public bool TilePlaceOn { get; private set; }
-            public bool LabelPlaceOn { get; private set; }
-
-            /// Tracks which selection mode is enabled; single, area, radial, or draw. Only one is enabled at a time,
-            /// Single select is enabled if no other mode is enabled.
-            public bool SingleSelectOn { get; private set; }
-            public bool AreaSelectOn { get; private set; }
-            public bool RadialSelectOn { get; private set; }
-            public bool DrawSelectOn { get; private set; }
-
-            public EditModes()
-            {
-                TileRemoveOn = false;
-                LabelRemoveOn = false;
-                
-                TilePlaceOn = true;     // enabled by default
-                LabelPlaceOn = false;
-
-                SingleSelectOn = true;  // enabled by default
-                AreaSelectOn = false; 
-                RadialSelectOn = false; 
-                DrawSelectOn = false;
-            }
-
-            #region selection modes
-
-            /// <summary>
-            /// Toggle single select mode. NOTE if is already enabled, it will stay enabled.
-            /// </summary>
-            public void ToggleSingleSelect(InputAction.CallbackContext context)
-            {
-                ToggleSingleSelect();
-            }
-
-            /// <summary>
-            /// Toggle single select mode. NOTE if is already enabled, it will stay enabled.
-            /// </summary>
-            public void ToggleSingleSelect()
-            {
-                DisableAllSelectModes();
-                SingleSelectOn = true;
-
-                DebugOut.Log(this, "Single select enabled.");
-            }
-
-            /// <summary>
-            /// Toggle radial select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleRadialSelect(InputAction.CallbackContext context)
-            {
-                ToggleRadialSelect();
-            }
-
-            /// <summary>
-            /// Toggle radial select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleRadialSelect()
-            {
-                bool tmp = !RadialSelectOn;
-                DisableAllSelectModes();
-                RadialSelectOn = tmp;
-
-                if (!RadialSelectOn)
-                {
-                    DebugOut.Log(this, "Radial select disabled.");
-                    ToggleSingleSelect();
-                    return;
-                }
-                DebugOut.Log(this, "Radial select enabled.");
-            }
-
-
-            /// <summary>
-            /// Toggle area select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleAreaSelect(InputAction.CallbackContext context)
-            {
-                ToggleAreaSelect();
-            }
-
-            /// <summary>
-            /// Toggle area select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleAreaSelect()
-            {
-                bool tmp = !AreaSelectOn;
-                DisableAllSelectModes();
-                AreaSelectOn = tmp;
-
-                if (!AreaSelectOn)
-                {
-                    DebugOut.Log(this, "Area select disabled.");
-                    ToggleSingleSelect();
-                    return;
-                }
-                DebugOut.Log(this, "Area select enabled.");
-            }
-
-
-            /// <summary>
-            /// Toggle draw select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleDrawSelect(InputAction.CallbackContext context)
-            {
-                ToggleDrawSelect();
-            }
-
-            /// <summary>
-            /// Toggle draw select mode. If disabled, single select mode will be enabled.
-            /// </summary>
-            public void ToggleDrawSelect()
-            {
-                bool tmp = !DrawSelectOn;
-                DisableAllSelectModes();
-                DrawSelectOn = tmp;
-
-                if (!DrawSelectOn)
-                {
-                    DebugOut.Log(this, "Draw select disabled.");
-                    ToggleSingleSelect();
-                    return;
-                }
-                DebugOut.Log(this, "Draw select enabled.");
-            }
-
-            private void DisableAllSelectModes()
-            {
-                SingleSelectOn = false;
-                AreaSelectOn = false;
-                RadialSelectOn = false;
-                DrawSelectOn = false;
-            }
-
-            #endregion
-        }
-        
         #endregion
 
         // Raycast to this layer to place tiles
@@ -223,7 +78,7 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private GameObject _unconfirmedTileVisualsParent;  // ghost tiles will be parented to this
 
         private readonly AreaEditData areaEditData;
-        private readonly EditModes _editModes;
+        private readonly ModeContainer _editModes;
 
         public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
         {
@@ -253,15 +108,25 @@ namespace StorytellersTable.Campaign.Modes
             confirmedMaterial = Singleton.Instance.ghostTileMaterial2;      // will probably change the shader of the material on hexRender instead of doing this
 
             areaEditData = new AreaEditData();
-            _editModes = new EditModes();
+            _editModes = new ModeContainer();
 
             // Add callback to toggle radial, area, and draw tile placements
-            _inputMap.Edit.ToggleSingle.performed += _editModes.ToggleSingleSelect;
-            _inputMap.Edit.ToggleRadial.performed += _editModes.ToggleRadialSelect;
-            _inputMap.Edit.ToggleArea.performed += _editModes.ToggleAreaSelect;
-            _inputMap.Edit.ToggleDraw.performed += _editModes.ToggleDrawSelect;
-            _inputMap.Edit.ClearSelection.performed += ClearTileSelection;
-            //_inputMap.Edit.ToggleTileRemove.performed += ;
+            _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
+            _inputMap.Selection.ToggleRadial.performed += _editModes.ToggleRadialSelect;
+            _inputMap.Selection.ToggleArea.performed += _editModes.ToggleAreaSelect;
+            _inputMap.Selection.ToggleDraw.performed += _editModes.ToggleDrawSelect;
+            _inputMap.Selection.ClearSelection.performed += ClearTileSelection;
+
+            // Add callbacks to toggle between tile/label edit, remove, and placement
+            _inputMap.Edit.ToggleTileMode.performed += _editModes.ToggleTileMode;
+            _inputMap.Edit.ToggleTileMode.performed += ClearTileSelection;
+
+            _inputMap.Edit.ToggleEdit.performed += EditModeToggled;
+            _inputMap.Edit.ToggleEdit.performed += _editModes.ToggleEdit;
+            _inputMap.Edit.TogglePlace.performed += ClearTileSelection;
+            _inputMap.Edit.TogglePlace.performed += _editModes.TogglePlace;
+            _inputMap.Edit.ToggleRemove.performed += ClearTileSelection;
+            _inputMap.Edit.ToggleRemove.performed += _editModes.ToggleRemove;
             // other call backs to input map...
         }
 
@@ -333,15 +198,15 @@ namespace StorytellersTable.Campaign.Modes
             _unconfirmedTilePos.Add(mouseHexCoord);
 
             // Calculate unconfirmed tiles for settings: Radial, Area, and Draw.
-            if (_editModes.RadialSelectOn)
+            if (_editModes.SelectionMode == SelectModeTypes.radialSelect)
             {
                 HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, _unconfirmedTilePos);
             }
-            else if (_editModes.AreaSelectOn && areaEditData.startDefined)
+            else if (_editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
             {
                 HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, _unconfirmedTilePos);
             }
-            else if (_editModes.DrawSelectOn)
+            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect)
             {
                 // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
             }
@@ -359,7 +224,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // Remove duplicate hex positions from _unconfirmedTilePos that exist on the map already (ie are placed tiles), for placement mode
-            if (_editModes.TilePlaceOn)
+            if (_editModes.IsTilePlaceOn())
             {
                 foreach (var pair in ActiveMap.tileDatas)
                 {
@@ -367,8 +232,12 @@ namespace StorytellersTable.Campaign.Modes
                         _unconfirmedTilePos.Remove(pair.Key);
                 }
             }
-            // Remove hex positiosn from _unconfirmedTilePos that DO NOT EXIST on the map, for removal mode
-            else if (_editModes.TileRemoveOn)
+            else if (_editModes.IsLabelPlaceOn())
+            {
+                // logic...
+            }
+            // Remove hex positiosn from _unconfirmedTilePos that DO NOT EXIST on the map, for tile removal/edit mode
+            else if (_editModes.IsTileRmvOn() || _editModes.IsTileEditOn())
             {
                 List<HexCoord> filtered = new();
                 foreach (var pair in ActiveMap.tileDatas)
@@ -380,6 +249,12 @@ namespace StorytellersTable.Campaign.Modes
                 _unconfirmedTilePos.Clear();
                 _unconfirmedTilePos.AddRange(filtered);
             }
+            // Remove hex positiosn from _unconfirmedTilePos that DO NOT EXIST on the map, for label removal/edit mode
+            else if (_editModes.IsTLabelRmvOn() || _editModes.IsLabelEditOn())
+            {
+                // logic...
+            }
+
             //DebugOut.Log(this, $"after purge: " + HexCoord.ListToString(_unconfirmedTilePos));
 
             // Create ghost visual for unconfirmed tiles
@@ -389,7 +264,7 @@ namespace StorytellersTable.Campaign.Modes
             // Update confirmed tiles
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                if (_editModes.AreaSelectOn)
+                if (_editModes.SelectionMode == SelectModeTypes.areaSelect)
                 {
                     // Set the starting position
                     if (!areaEditData.startDefined)
@@ -646,6 +521,15 @@ namespace StorytellersTable.Campaign.Modes
             CheckToDestoryConfirmUi();
         }
 
+        private void EditModeToggled(InputAction.CallbackContext context)
+        {
+            if (_editModes.IsEditOn())
+                return;
+            
+            // if the mode is not set to edit already, we need to clear the coordinate selection
+            ClearTileSelection(context);
+        }
+
         // functions for Input Action call backs...
 
         #endregion
@@ -655,7 +539,7 @@ namespace StorytellersTable.Campaign.Modes
         /// <summary>
         /// Instantiates a gameobject from the prefab, `_confirmPlacementPrefab`, only one may exist.
         /// </summary>
-        private void LoadConfirmCancelUi()
+        private void LoadConfirmCancelUi() // NOTE: this should only be for remove and place modes, and the proper button listeners need to be set.
         {
             if (_runtimeConfirmPlacementUi != null)
                 return;

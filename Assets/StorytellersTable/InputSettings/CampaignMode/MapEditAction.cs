@@ -89,7 +89,7 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
     ""name"": ""MapEditAction"",
     ""maps"": [
         {
-            ""name"": ""Edit"",
+            ""name"": ""Selection"",
             ""id"": ""b5ecaa16-b0a3-4ad1-94d2-0b269acbc76e"",
             ""actions"": [
                 {
@@ -132,15 +132,6 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
                     ""name"": ""Clear Selection"",
                     ""type"": ""Button"",
                     ""id"": ""a3a19e78-85e8-456c-bb5a-6ad70ab2cbe3"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Toggle Tile Remove"",
-                    ""type"": ""Button"",
-                    ""id"": ""adc0d0ce-aa49-475c-aabc-ff6e5f2e525a"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -202,15 +193,92 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
                     ""action"": ""Clear Selection"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""Edit"",
+            ""id"": ""63194dff-9bb2-448d-84aa-276c1909a47d"",
+            ""actions"": [
+                {
+                    ""name"": ""Toggle Tile Mode"",
+                    ""type"": ""Button"",
+                    ""id"": ""4b6cbd26-2be4-432c-a982-1d1da162d3e0"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Toggle Place"",
+                    ""type"": ""Button"",
+                    ""id"": ""579e5db6-abad-4868-98e7-e0f31c9e8564"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Toggle Remove"",
+                    ""type"": ""Button"",
+                    ""id"": ""65c7411f-76d0-4e13-ad90-5837823efa82"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Toggle Edit"",
+                    ""type"": ""Button"",
+                    ""id"": ""52b512d2-44c8-4fda-9e80-78e6ba0c6df8"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""bd66fd5f-b232-4323-98ae-97713b93e5f3"",
+                    ""path"": ""<Keyboard>/equals"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Toggle Place"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
-                    ""id"": ""7f3eb222-401d-46aa-9df7-ed81d560d3a1"",
+                    ""id"": ""cd25f05e-a712-422d-a54d-619a9e70b87c"",
                     ""path"": ""<Keyboard>/minus"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Toggle Tile Remove"",
+                    ""action"": ""Toggle Remove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c6244ccf-6f37-4abe-bdfe-8db04b4464fa"",
+                    ""path"": ""<Keyboard>/0"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Toggle Edit"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""04296ea5-aba8-48d4-b880-d19c148d129f"",
+                    ""path"": ""<Keyboard>/backslash"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Toggle Tile Mode"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -219,18 +287,24 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
     ],
     ""controlSchemes"": []
 }");
+        // Selection
+        m_Selection = asset.FindActionMap("Selection", throwIfNotFound: true);
+        m_Selection_ToggleSingle = m_Selection.FindAction("Toggle Single", throwIfNotFound: true);
+        m_Selection_ToggleRadial = m_Selection.FindAction("Toggle Radial", throwIfNotFound: true);
+        m_Selection_ToggleArea = m_Selection.FindAction("Toggle Area", throwIfNotFound: true);
+        m_Selection_ToggleDraw = m_Selection.FindAction("Toggle Draw", throwIfNotFound: true);
+        m_Selection_ClearSelection = m_Selection.FindAction("Clear Selection", throwIfNotFound: true);
         // Edit
         m_Edit = asset.FindActionMap("Edit", throwIfNotFound: true);
-        m_Edit_ToggleSingle = m_Edit.FindAction("Toggle Single", throwIfNotFound: true);
-        m_Edit_ToggleRadial = m_Edit.FindAction("Toggle Radial", throwIfNotFound: true);
-        m_Edit_ToggleArea = m_Edit.FindAction("Toggle Area", throwIfNotFound: true);
-        m_Edit_ToggleDraw = m_Edit.FindAction("Toggle Draw", throwIfNotFound: true);
-        m_Edit_ClearSelection = m_Edit.FindAction("Clear Selection", throwIfNotFound: true);
-        m_Edit_ToggleTileRemove = m_Edit.FindAction("Toggle Tile Remove", throwIfNotFound: true);
+        m_Edit_ToggleTileMode = m_Edit.FindAction("Toggle Tile Mode", throwIfNotFound: true);
+        m_Edit_TogglePlace = m_Edit.FindAction("Toggle Place", throwIfNotFound: true);
+        m_Edit_ToggleRemove = m_Edit.FindAction("Toggle Remove", throwIfNotFound: true);
+        m_Edit_ToggleEdit = m_Edit.FindAction("Toggle Edit", throwIfNotFound: true);
     }
 
     ~@MapEditAction()
     {
+        UnityEngine.Debug.Assert(!m_Selection.enabled, "This will cause a leak and performance issues, MapEditAction.Selection.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Edit.enabled, "This will cause a leak and performance issues, MapEditAction.Edit.Disable() has not been called.");
     }
 
@@ -304,15 +378,153 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         return asset.FindBinding(bindingMask, out action);
     }
 
+    // Selection
+    private readonly InputActionMap m_Selection;
+    private List<ISelectionActions> m_SelectionActionsCallbackInterfaces = new List<ISelectionActions>();
+    private readonly InputAction m_Selection_ToggleSingle;
+    private readonly InputAction m_Selection_ToggleRadial;
+    private readonly InputAction m_Selection_ToggleArea;
+    private readonly InputAction m_Selection_ToggleDraw;
+    private readonly InputAction m_Selection_ClearSelection;
+    /// <summary>
+    /// Provides access to input actions defined in input action map "Selection".
+    /// </summary>
+    public struct SelectionActions
+    {
+        private @MapEditAction m_Wrapper;
+
+        /// <summary>
+        /// Construct a new instance of the input action map wrapper class.
+        /// </summary>
+        public SelectionActions(@MapEditAction wrapper) { m_Wrapper = wrapper; }
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ToggleSingle".
+        /// </summary>
+        public InputAction @ToggleSingle => m_Wrapper.m_Selection_ToggleSingle;
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ToggleRadial".
+        /// </summary>
+        public InputAction @ToggleRadial => m_Wrapper.m_Selection_ToggleRadial;
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ToggleArea".
+        /// </summary>
+        public InputAction @ToggleArea => m_Wrapper.m_Selection_ToggleArea;
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ToggleDraw".
+        /// </summary>
+        public InputAction @ToggleDraw => m_Wrapper.m_Selection_ToggleDraw;
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ClearSelection".
+        /// </summary>
+        public InputAction @ClearSelection => m_Wrapper.m_Selection_ClearSelection;
+        /// <summary>
+        /// Provides access to the underlying input action map instance.
+        /// </summary>
+        public InputActionMap Get() { return m_Wrapper.m_Selection; }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+        public void Enable() { Get().Enable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+        public void Disable() { Get().Disable(); }
+        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+        public bool enabled => Get().enabled;
+        /// <summary>
+        /// Implicitly converts an <see ref="SelectionActions" /> to an <see ref="InputActionMap" /> instance.
+        /// </summary>
+        public static implicit operator InputActionMap(SelectionActions set) { return set.Get(); }
+        /// <summary>
+        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <param name="instance">Callback instance.</param>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+        /// </remarks>
+        /// <seealso cref="SelectionActions" />
+        public void AddCallbacks(ISelectionActions instance)
+        {
+            if (instance == null || m_Wrapper.m_SelectionActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_SelectionActionsCallbackInterfaces.Add(instance);
+            @ToggleSingle.started += instance.OnToggleSingle;
+            @ToggleSingle.performed += instance.OnToggleSingle;
+            @ToggleSingle.canceled += instance.OnToggleSingle;
+            @ToggleRadial.started += instance.OnToggleRadial;
+            @ToggleRadial.performed += instance.OnToggleRadial;
+            @ToggleRadial.canceled += instance.OnToggleRadial;
+            @ToggleArea.started += instance.OnToggleArea;
+            @ToggleArea.performed += instance.OnToggleArea;
+            @ToggleArea.canceled += instance.OnToggleArea;
+            @ToggleDraw.started += instance.OnToggleDraw;
+            @ToggleDraw.performed += instance.OnToggleDraw;
+            @ToggleDraw.canceled += instance.OnToggleDraw;
+            @ClearSelection.started += instance.OnClearSelection;
+            @ClearSelection.performed += instance.OnClearSelection;
+            @ClearSelection.canceled += instance.OnClearSelection;
+        }
+
+        /// <summary>
+        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+        /// </summary>
+        /// <remarks>
+        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+        /// </remarks>
+        /// <seealso cref="SelectionActions" />
+        private void UnregisterCallbacks(ISelectionActions instance)
+        {
+            @ToggleSingle.started -= instance.OnToggleSingle;
+            @ToggleSingle.performed -= instance.OnToggleSingle;
+            @ToggleSingle.canceled -= instance.OnToggleSingle;
+            @ToggleRadial.started -= instance.OnToggleRadial;
+            @ToggleRadial.performed -= instance.OnToggleRadial;
+            @ToggleRadial.canceled -= instance.OnToggleRadial;
+            @ToggleArea.started -= instance.OnToggleArea;
+            @ToggleArea.performed -= instance.OnToggleArea;
+            @ToggleArea.canceled -= instance.OnToggleArea;
+            @ToggleDraw.started -= instance.OnToggleDraw;
+            @ToggleDraw.performed -= instance.OnToggleDraw;
+            @ToggleDraw.canceled -= instance.OnToggleDraw;
+            @ClearSelection.started -= instance.OnClearSelection;
+            @ClearSelection.performed -= instance.OnClearSelection;
+            @ClearSelection.canceled -= instance.OnClearSelection;
+        }
+
+        /// <summary>
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="SelectionActions.UnregisterCallbacks(ISelectionActions)" />.
+        /// </summary>
+        /// <seealso cref="SelectionActions.UnregisterCallbacks(ISelectionActions)" />
+        public void RemoveCallbacks(ISelectionActions instance)
+        {
+            if (m_Wrapper.m_SelectionActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        /// <summary>
+        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+        /// </summary>
+        /// <remarks>
+        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+        /// </remarks>
+        /// <seealso cref="SelectionActions.AddCallbacks(ISelectionActions)" />
+        /// <seealso cref="SelectionActions.RemoveCallbacks(ISelectionActions)" />
+        /// <seealso cref="SelectionActions.UnregisterCallbacks(ISelectionActions)" />
+        public void SetCallbacks(ISelectionActions instance)
+        {
+            foreach (var item in m_Wrapper.m_SelectionActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_SelectionActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    /// <summary>
+    /// Provides a new <see cref="SelectionActions" /> instance referencing this action map.
+    /// </summary>
+    public SelectionActions @Selection => new SelectionActions(this);
+
     // Edit
     private readonly InputActionMap m_Edit;
     private List<IEditActions> m_EditActionsCallbackInterfaces = new List<IEditActions>();
-    private readonly InputAction m_Edit_ToggleSingle;
-    private readonly InputAction m_Edit_ToggleRadial;
-    private readonly InputAction m_Edit_ToggleArea;
-    private readonly InputAction m_Edit_ToggleDraw;
-    private readonly InputAction m_Edit_ClearSelection;
-    private readonly InputAction m_Edit_ToggleTileRemove;
+    private readonly InputAction m_Edit_ToggleTileMode;
+    private readonly InputAction m_Edit_TogglePlace;
+    private readonly InputAction m_Edit_ToggleRemove;
+    private readonly InputAction m_Edit_ToggleEdit;
     /// <summary>
     /// Provides access to input actions defined in input action map "Edit".
     /// </summary>
@@ -325,29 +537,21 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         /// </summary>
         public EditActions(@MapEditAction wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Edit/ToggleSingle".
+        /// Provides access to the underlying input action "Edit/ToggleTileMode".
         /// </summary>
-        public InputAction @ToggleSingle => m_Wrapper.m_Edit_ToggleSingle;
+        public InputAction @ToggleTileMode => m_Wrapper.m_Edit_ToggleTileMode;
         /// <summary>
-        /// Provides access to the underlying input action "Edit/ToggleRadial".
+        /// Provides access to the underlying input action "Edit/TogglePlace".
         /// </summary>
-        public InputAction @ToggleRadial => m_Wrapper.m_Edit_ToggleRadial;
+        public InputAction @TogglePlace => m_Wrapper.m_Edit_TogglePlace;
         /// <summary>
-        /// Provides access to the underlying input action "Edit/ToggleArea".
+        /// Provides access to the underlying input action "Edit/ToggleRemove".
         /// </summary>
-        public InputAction @ToggleArea => m_Wrapper.m_Edit_ToggleArea;
+        public InputAction @ToggleRemove => m_Wrapper.m_Edit_ToggleRemove;
         /// <summary>
-        /// Provides access to the underlying input action "Edit/ToggleDraw".
+        /// Provides access to the underlying input action "Edit/ToggleEdit".
         /// </summary>
-        public InputAction @ToggleDraw => m_Wrapper.m_Edit_ToggleDraw;
-        /// <summary>
-        /// Provides access to the underlying input action "Edit/ClearSelection".
-        /// </summary>
-        public InputAction @ClearSelection => m_Wrapper.m_Edit_ClearSelection;
-        /// <summary>
-        /// Provides access to the underlying input action "Edit/ToggleTileRemove".
-        /// </summary>
-        public InputAction @ToggleTileRemove => m_Wrapper.m_Edit_ToggleTileRemove;
+        public InputAction @ToggleEdit => m_Wrapper.m_Edit_ToggleEdit;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -374,24 +578,18 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_EditActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_EditActionsCallbackInterfaces.Add(instance);
-            @ToggleSingle.started += instance.OnToggleSingle;
-            @ToggleSingle.performed += instance.OnToggleSingle;
-            @ToggleSingle.canceled += instance.OnToggleSingle;
-            @ToggleRadial.started += instance.OnToggleRadial;
-            @ToggleRadial.performed += instance.OnToggleRadial;
-            @ToggleRadial.canceled += instance.OnToggleRadial;
-            @ToggleArea.started += instance.OnToggleArea;
-            @ToggleArea.performed += instance.OnToggleArea;
-            @ToggleArea.canceled += instance.OnToggleArea;
-            @ToggleDraw.started += instance.OnToggleDraw;
-            @ToggleDraw.performed += instance.OnToggleDraw;
-            @ToggleDraw.canceled += instance.OnToggleDraw;
-            @ClearSelection.started += instance.OnClearSelection;
-            @ClearSelection.performed += instance.OnClearSelection;
-            @ClearSelection.canceled += instance.OnClearSelection;
-            @ToggleTileRemove.started += instance.OnToggleTileRemove;
-            @ToggleTileRemove.performed += instance.OnToggleTileRemove;
-            @ToggleTileRemove.canceled += instance.OnToggleTileRemove;
+            @ToggleTileMode.started += instance.OnToggleTileMode;
+            @ToggleTileMode.performed += instance.OnToggleTileMode;
+            @ToggleTileMode.canceled += instance.OnToggleTileMode;
+            @TogglePlace.started += instance.OnTogglePlace;
+            @TogglePlace.performed += instance.OnTogglePlace;
+            @TogglePlace.canceled += instance.OnTogglePlace;
+            @ToggleRemove.started += instance.OnToggleRemove;
+            @ToggleRemove.performed += instance.OnToggleRemove;
+            @ToggleRemove.canceled += instance.OnToggleRemove;
+            @ToggleEdit.started += instance.OnToggleEdit;
+            @ToggleEdit.performed += instance.OnToggleEdit;
+            @ToggleEdit.canceled += instance.OnToggleEdit;
         }
 
         /// <summary>
@@ -403,24 +601,18 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         /// <seealso cref="EditActions" />
         private void UnregisterCallbacks(IEditActions instance)
         {
-            @ToggleSingle.started -= instance.OnToggleSingle;
-            @ToggleSingle.performed -= instance.OnToggleSingle;
-            @ToggleSingle.canceled -= instance.OnToggleSingle;
-            @ToggleRadial.started -= instance.OnToggleRadial;
-            @ToggleRadial.performed -= instance.OnToggleRadial;
-            @ToggleRadial.canceled -= instance.OnToggleRadial;
-            @ToggleArea.started -= instance.OnToggleArea;
-            @ToggleArea.performed -= instance.OnToggleArea;
-            @ToggleArea.canceled -= instance.OnToggleArea;
-            @ToggleDraw.started -= instance.OnToggleDraw;
-            @ToggleDraw.performed -= instance.OnToggleDraw;
-            @ToggleDraw.canceled -= instance.OnToggleDraw;
-            @ClearSelection.started -= instance.OnClearSelection;
-            @ClearSelection.performed -= instance.OnClearSelection;
-            @ClearSelection.canceled -= instance.OnClearSelection;
-            @ToggleTileRemove.started -= instance.OnToggleTileRemove;
-            @ToggleTileRemove.performed -= instance.OnToggleTileRemove;
-            @ToggleTileRemove.canceled -= instance.OnToggleTileRemove;
+            @ToggleTileMode.started -= instance.OnToggleTileMode;
+            @ToggleTileMode.performed -= instance.OnToggleTileMode;
+            @ToggleTileMode.canceled -= instance.OnToggleTileMode;
+            @TogglePlace.started -= instance.OnTogglePlace;
+            @TogglePlace.performed -= instance.OnTogglePlace;
+            @TogglePlace.canceled -= instance.OnTogglePlace;
+            @ToggleRemove.started -= instance.OnToggleRemove;
+            @ToggleRemove.performed -= instance.OnToggleRemove;
+            @ToggleRemove.canceled -= instance.OnToggleRemove;
+            @ToggleEdit.started -= instance.OnToggleEdit;
+            @ToggleEdit.performed -= instance.OnToggleEdit;
+            @ToggleEdit.canceled -= instance.OnToggleEdit;
         }
 
         /// <summary>
@@ -455,11 +647,11 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
     /// </summary>
     public EditActions @Edit => new EditActions(this);
     /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Edit" which allows adding and removing callbacks.
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Selection" which allows adding and removing callbacks.
     /// </summary>
-    /// <seealso cref="EditActions.AddCallbacks(IEditActions)" />
-    /// <seealso cref="EditActions.RemoveCallbacks(IEditActions)" />
-    public interface IEditActions
+    /// <seealso cref="SelectionActions.AddCallbacks(ISelectionActions)" />
+    /// <seealso cref="SelectionActions.RemoveCallbacks(ISelectionActions)" />
+    public interface ISelectionActions
     {
         /// <summary>
         /// Method invoked when associated input action "Toggle Single" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
@@ -496,12 +688,41 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnClearSelection(InputAction.CallbackContext context);
+    }
+    /// <summary>
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Edit" which allows adding and removing callbacks.
+    /// </summary>
+    /// <seealso cref="EditActions.AddCallbacks(IEditActions)" />
+    /// <seealso cref="EditActions.RemoveCallbacks(IEditActions)" />
+    public interface IEditActions
+    {
         /// <summary>
-        /// Method invoked when associated input action "Toggle Tile Remove" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Toggle Tile Mode" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnToggleTileRemove(InputAction.CallbackContext context);
+        void OnToggleTileMode(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Toggle Place" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnTogglePlace(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Toggle Remove" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnToggleRemove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Toggle Edit" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnToggleEdit(InputAction.CallbackContext context);
     }
 }

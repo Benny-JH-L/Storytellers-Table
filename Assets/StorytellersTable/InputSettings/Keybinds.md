@@ -21,8 +21,12 @@ left mouse click: select tile
 2:  toggle radial select
 3:  toggle area select
 4:  toggle draw select
-`:  clear selected tiles
--:  toggle's tile removal (if toggled off, tile place is enabled)
+`:  clear selected tiles/labels
+
+\:  toggle tile/label mode
+=:  toggle's tile/label placement (if off, tile edit is enabled)
+-:  toggle's tile/label removal (if off, tile edit is enabled)
+0:  toggle's tile/label edit
 
 # Entity Edit #
 

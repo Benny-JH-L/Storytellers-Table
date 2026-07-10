@@ -3,7 +3,7 @@
     "name": "MapEditAction",
     "maps": [
         {
-            "name": "Edit",
+            "name": "Selection",
             "id": "b5ecaa16-b0a3-4ad1-94d2-0b269acbc76e",
             "actions": [
                 {
@@ -46,15 +46,6 @@
                     "name": "Clear Selection",
                     "type": "Button",
                     "id": "a3a19e78-85e8-456c-bb5a-6ad70ab2cbe3",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Toggle Tile Remove",
-                    "type": "Button",
-                    "id": "adc0d0ce-aa49-475c-aabc-ff6e5f2e525a",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -116,15 +107,92 @@
                     "action": "Clear Selection",
                     "isComposite": false,
                     "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Edit",
+            "id": "63194dff-9bb2-448d-84aa-276c1909a47d",
+            "actions": [
+                {
+                    "name": "Toggle Tile Mode",
+                    "type": "Button",
+                    "id": "4b6cbd26-2be4-432c-a982-1d1da162d3e0",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Place",
+                    "type": "Button",
+                    "id": "579e5db6-abad-4868-98e7-e0f31c9e8564",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Remove",
+                    "type": "Button",
+                    "id": "65c7411f-76d0-4e13-ad90-5837823efa82",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Toggle Edit",
+                    "type": "Button",
+                    "id": "52b512d2-44c8-4fda-9e80-78e6ba0c6df8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "bd66fd5f-b232-4323-98ae-97713b93e5f3",
+                    "path": "<Keyboard>/equals",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Place",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "7f3eb222-401d-46aa-9df7-ed81d560d3a1",
+                    "id": "cd25f05e-a712-422d-a54d-619a9e70b87c",
                     "path": "<Keyboard>/minus",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Toggle Tile Remove",
+                    "action": "Toggle Remove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c6244ccf-6f37-4abe-bdfe-8db04b4464fa",
+                    "path": "<Keyboard>/0",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Edit",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "04296ea5-aba8-48d4-b880-d19c148d129f",
+                    "path": "<Keyboard>/backslash",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Toggle Tile Mode",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
