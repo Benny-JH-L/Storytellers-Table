@@ -214,8 +214,22 @@ namespace StorytellersTable.Renderer
 
         public void SetMaterial(Material newMaterial)
         {
-            _meshRenderer.sharedMaterial = newMaterial;
+            _meshRenderer.material = newMaterial;
             //_material = newMaterial;
+        }
+
+        public Material GetMaterial()
+        {
+            return _meshRenderer.material;
+        }
+
+        /// <summary>
+        /// Set the material shader of the MeshRenderer.
+        /// </summary>
+        /// <param name="shader"></param>
+        public void SetMaterialShader(Shader shader)
+        {
+            _meshRenderer.material.shader = shader;
         }
 
     }

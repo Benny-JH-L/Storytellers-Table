@@ -136,10 +136,10 @@ namespace StorytellersTable.Map
         {
             ClearActiveMapVisuals(); // clear the current map visuals before loading new ones
 
-            foreach ((_, TileData tileData) in mapData.tileDatas)
+            foreach ((HexCoord hexCoord, TileData tileData) in mapData.tileDatas)
             {
                 // Generate tile visuals
-                mapTileRenderer.AddHexTileVisual(tileData);
+                mapTileRenderer.AddHexTileVisual(hexCoord, tileData.GetMaterial());
 
                 // Generate hex coord labels
                 coordinatesRenderer.AddLabel(tileData);
@@ -161,8 +161,9 @@ namespace StorytellersTable.Map
         /// <param name="tileData"></param>
         public void AddToActiveMap(TileData tileData)
         {
-            ActiveMapData.tileDatas[tileData.hexCoord] = tileData;
-            mapTileRenderer.AddHexTileVisual(tileData);    // add hex tile visual
+            HexCoord hexCoord = tileData.hexCoord;
+            ActiveMapData.tileDatas[hexCoord] = tileData;
+            mapTileRenderer.AddHexTileVisual(hexCoord, tileData.GetMaterial());    // add hex tile visual
             coordinatesRenderer.AddLabel(tileData);        // add hex pos label
         }
 
@@ -184,13 +185,17 @@ namespace StorytellersTable.Map
         public void RemoveFromActiveMap(TileData data)
         {
             HexCoord hexCoord = data.hexCoord;
-            DebugOut.Log(this, $"Removed [{hexCoord}] tile");
+
+            if (!ActiveMapData.tileDatas.ContainsKey(hexCoord))
+                return;
+
+            DebugOut.Log(this, $"Removing [{hexCoord}] tile");
 
             // remove the position label
             coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]); 
 
             // Destroy tile visual
-            mapTileRenderer.RemoveVisual(ActiveMapData.tileDatas[hexCoord]);
+            mapTileRenderer.RemoveVisual(hexCoord);
 
             // remove position & tile data from the map data
             ActiveMapData.tileDatas.Remove(hexCoord);

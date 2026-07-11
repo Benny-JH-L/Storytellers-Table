@@ -42,9 +42,6 @@ namespace StorytellersTable.Campaign.Modes
         public static LayerMask mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
         public static float raycastMaxDistance = 500f;
 
-        [Header("Tile Settings")]
-        public static float height = 1f;
-
         // material of placed tiles --> set based on UI
         public static Material placedMaterial;       
         public static Material ghostMaterial;
@@ -69,15 +66,15 @@ namespace StorytellersTable.Campaign.Modes
          * 1) ghost tiles, based on immediate user input (unconfirmed tiles)
          * 2) confirmed tiles, based from user input and the current ghost tiles. These tiles will be placed on the map.
         */
-        [SerializeField] private List<HexCoord> _confirmedTilePos;          // contains tiles to potentially place, they do not exist in the map data yet.
-        [SerializeField] private List<HexCoord> _unconfirmedTilePos;
-        [SerializeField] private List<HexRenderer> _confirmedPosVisuals;
-        [SerializeField] private List<HexRenderer> _unconfirmedPosVisuals;
-        [SerializeField] private GameObject _confirmedPosVisualsParent;    // confirmed positions will be parented to this
-        [SerializeField] private GameObject _unconfirmedPosVisualsParent;  // ghost tiles will be parented to this
+        [SerializeField] private MapTileRenderer confirmedPosVisuals;    // contains tiles to potentially place, they do not exist in the map data yet.
+        [SerializeField] private MapTileRenderer unconfirmedPosVisuals;  // contains ghost tiles, they do not exist in the map data.
 
         private readonly AreaEditData areaEditData;
         private readonly ModeContainer _editModes;
+
+        // values edit by the UI
+        private static string tileTypeId = "Sweet :)";
+        private static int height = 1;
 
         public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
         {
@@ -90,16 +87,11 @@ namespace StorytellersTable.Campaign.Modes
             _runtimeConfirmPlacementUi = null;
             _listRuntimeUi = new List<GameObject>();
 
-            _confirmedTilePos = new List<HexCoord>();
-            _unconfirmedTilePos = new List<HexCoord>();
+            confirmedPosVisuals = new GameObject("MapEdit - Confirmed_Pos_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
+            confirmedPosVisuals.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
-            _unconfirmedPosVisuals = new List<HexRenderer>();
-            _confirmedPosVisuals = new List<HexRenderer>();
-
-            _unconfirmedPosVisualsParent = new GameObject("MapEdit - Unconfirmed_Pos_Visuals");
-            _unconfirmedPosVisualsParent.transform.SetParent(CampaignModeManager.Instance.transform, true);
-            _confirmedPosVisualsParent = new GameObject("MapEdit - Confirmed_Pos_Visuals");
-            _confirmedPosVisualsParent.transform.SetParent(CampaignModeManager.Instance.transform, true);
+            unconfirmedPosVisuals = new GameObject("MapEdit - Unconfirmed_Pos_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
+            unconfirmedPosVisuals.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
             // Set initial materials
             placedMaterial = Singleton.Instance.defaultTileMaterial;
@@ -143,7 +135,7 @@ namespace StorytellersTable.Campaign.Modes
 
         void ICampaignMode.Exit()
         {
-            _inputMap.Disable();            // disable input for this mode
+            _inputMap.Disable();    // disable input for this mode
 
             // clean up all runtime Ui
             foreach (GameObject obj in _listRuntimeUi)
@@ -154,8 +146,8 @@ namespace StorytellersTable.Campaign.Modes
             _listRuntimeUi.Clear();
 
             // Clean up tiles visuals
-            _DestroyUnconfirmedTiles();
-            _DestoryConfirmedTiles();
+            DestroyUnconfirmedTiles();
+            DestoryConfirmedTiles();
         }
 
         void ICampaignMode.UpdateMode()
@@ -165,7 +157,7 @@ namespace StorytellersTable.Campaign.Modes
                 return;
 
             // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
-            _DestroyUnconfirmedTiles();
+            DestroyUnconfirmedTiles();
 
             // Get mouse's hex coordinate based on world position 
             HexCoord mouseHexCoord;
@@ -194,16 +186,17 @@ namespace StorytellersTable.Campaign.Modes
             #endregion
 
             // Add unconfirmed position at mouse position
-            _unconfirmedTilePos.Add(mouseHexCoord);
+            List<HexCoord> unconfirmedHexCoords = new();
+            unconfirmedHexCoords.Add(mouseHexCoord);
 
             // Calculate unconfirmed positions for settings: Radial, Area, and Draw.
             if (_editModes.SelectionMode == SelectModeTypes.radialSelect)
             {
-                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, _unconfirmedTilePos);
+                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, unconfirmedHexCoords);
             }
             else if (_editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
             {
-                HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, _unconfirmedTilePos);
+                HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
             }
             else if (_editModes.SelectionMode == SelectModeTypes.drawSelect)
             {
@@ -211,13 +204,13 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // remove duplicate positions
-            _unconfirmedTilePos = _unconfirmedTilePos.ToHashSet().ToList();
+            unconfirmedHexCoords = unconfirmedHexCoords.ToHashSet().ToList();
 
             // Remove duiplicate hex positions that already exist in confirmed positions list
-            foreach (HexCoord pos in _confirmedTilePos)
+            foreach ((HexCoord pos, _) in confirmedPosVisuals.GetVisualData())
             {
-                if (_unconfirmedTilePos.Contains(pos))
-                    _unconfirmedTilePos.Remove(pos);
+                if (unconfirmedHexCoords.Contains(pos))
+                    unconfirmedHexCoords.Remove(pos);
             }
 
             // Remove duplicate hex positions from _unconfirmedTilePos that exist on the map already (ie are placed tiles), for placement mode
@@ -225,8 +218,8 @@ namespace StorytellersTable.Campaign.Modes
             {
                 foreach (var pair in ActiveMap.tileDatas)
                 {
-                    if (_unconfirmedTilePos.Contains(pair.Key))
-                        _unconfirmedTilePos.Remove(pair.Key);
+                    if (unconfirmedHexCoords.Contains(pair.Key))
+                        unconfirmedHexCoords.Remove(pair.Key);
                 }
             }
             else if (_editModes.IsLabelPlaceOn())
@@ -239,12 +232,12 @@ namespace StorytellersTable.Campaign.Modes
                 List<HexCoord> filtered = new();
                 foreach (var pair in ActiveMap.tileDatas)
                 {
-                    if (_unconfirmedTilePos.Contains(pair.Key))
+                    if (unconfirmedHexCoords.Contains(pair.Key))
                         filtered.Add(pair.Key);
                 }
                 // Clear the list and only add the filtered hex coords (hex coords that exist in the map).
-                _unconfirmedTilePos.Clear();
-                _unconfirmedTilePos.AddRange(filtered);
+                unconfirmedHexCoords.Clear();
+                unconfirmedHexCoords.AddRange(filtered);
             }
             // Remove hex positiosn from _unconfirmedTilePos that DO NOT EXIST on the map, FOR LABEL removal/edit mode
             else if (_editModes.IsTLabelRmvOn() || _editModes.IsLabelEditOn())
@@ -253,8 +246,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // Create ghost visual for unconfirmed tiles
-            foreach (HexCoord hexCoord in _unconfirmedTilePos)
-                GenerateGhostTile(hexCoord, ghostMaterial, _unconfirmedPosVisualsParent.transform, _unconfirmedPosVisuals);
+            unconfirmedPosVisuals.AddHexTileVisual(unconfirmedHexCoords, ghostMaterial);
 
             // Update confirmed tiles
             if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -290,44 +282,26 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void UpdateConfirmedTiles()
         {
-            if (_unconfirmedTilePos.Count == 0)
+            if (unconfirmedPosVisuals.Count() == 0)
+                //if (_unconfirmedTilePos.Count == 0)
                 return;
-
-            // Add the visuals and hex coords to their respective confirmed tile lists
-            _confirmedPosVisuals.AddRange(_unconfirmedPosVisuals);
-            _confirmedTilePos.AddRange(_unconfirmedTilePos);
 
             // load confimation ui for placement/removal modes
             if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
                 LoadConfirmCancelUi();
             // else load Ui for tile/label editing
 
-            // Update hex visual
-            foreach (HexRenderer hexRenderer in _confirmedPosVisuals)
+            // Create new confirmed visuals from unconfirmedPosVisuals
+            foreach ((HexCoord coord, HexRenderer hexRenderer) in unconfirmedPosVisuals.GetVisualData())
             {
-                // Instead of destroying and recreating visuals, we can reparent them
-                hexRenderer.transform.SetParent(_confirmedPosVisualsParent.transform, true);
-                // Set a new material for better visualization
-                hexRenderer.SetMaterial(confirmedMaterial);
+                confirmedPosVisuals.AddHexTileVisual(coord, Singleton.Instance.ghostTileMaterial2); // material will be set by the UI, use shader to differentiate!
             }
 
-            // Clear the unconfirmed tiles of references
-            _unconfirmedPosVisuals.Clear();
-            _unconfirmedTilePos.Clear();
-        }
+            // Clear the unconfirmedPosVisuals visuals
+            unconfirmedPosVisuals.ClearVisuals();
 
-        /// <summary>
-        /// Generate a ghost visual at a given HexCoord with a Material.
-        /// </summary>
-        /// <param name="hexCoord"></param>
-        /// <param name="ghostMat"></param>
-        /// <param name="hexVisualParent"></param>
-        /// <param name="result"></param>
-        private void GenerateGhostTile(HexCoord hexCoord, Material ghostMat, Transform hexVisualParent, List<HexRenderer> result)
-        {
-            HexRenderer ghostVisual = GenerateHexRenderer(hexCoord, ghostMat);
-            ghostVisual.transform.SetParent(hexVisualParent, true);
-            result.Add(ghostVisual);
+            // Move the visuals and tile data, then clear data in unconfirmedPosVisuals
+            //confirmedPosVisuals.AddFromMapTileRenderer(unconfirmedPosVisuals, true);
         }
 
         /// <summary>
@@ -335,16 +309,16 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void _PlaceConfirmedTiles()
         {
-            _confirmedTilePos = _confirmedTilePos.ToHashSet().ToList(); // ensure there are no duplicate hex positions
-            foreach (HexCoord tileCoord in _confirmedTilePos)
+            //_confirmedTilePos = _confirmedTilePos.ToHashSet().ToList(); // ensure there are no duplicate hex positions
+            foreach ((HexCoord tileCoord, _) in confirmedPosVisuals.GetVisualData())
             {
                 // Set `placed` material
-                TileData newData = new TileData(tileCoord, HexMath.GetPositionFromAxial(tileCoord).y); // ensure you include other fields...
+                TileData newData = new TileData(tileCoord, HexMath.GetPositionFromAxial(tileCoord).y, height, tileTypeId);
                 MapManager.Instance.AddToActiveMap(newData);
             }
 
             // Clean up, MapManger will generate the placed tiles' visuals
-            _DestoryConfirmedTiles();
+            DestoryConfirmedTiles();
 
             return;
         }
@@ -365,19 +339,19 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void ClearConfirmedPositions()
         {
-            _DestoryConfirmedTiles();
+            DestoryConfirmedTiles();
             CheckToDestoryConfirmUi();
         }
 
         /// <summary>
-        /// Removes tile data and visual from the active map using `_confirmedTilePos`.
+        /// Removes tile data and visual from the active map using `confirmedPosVisuals` data.
         /// </summary>
         private void RmvConfirmedPosFromActiveMap()
         {
             List<TileData> tileDatas = new List<TileData>();
 
             // get the tile datas with the hex coordinates in the list
-            foreach (HexCoord tileCoord in _confirmedTilePos)
+            foreach ((HexCoord tileCoord, _) in confirmedPosVisuals.GetVisualData())
                 tileDatas.Add(MapManager.Instance.ActiveMapData.tileDatas[tileCoord]);
 
             MapManager.Instance.RemoveFromActiveMap(tileDatas);
@@ -385,34 +359,21 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         /// <summary>
-        /// Destroys the list of unconfirmed tile visuals and positions.
+        /// Destroys the visuals of unconfirmed HexCoords.
         /// </summary>
-        private void _DestroyUnconfirmedTiles()
+        private void DestroyUnconfirmedTiles()
         {
-            foreach (HexRenderer hexRenderer in _unconfirmedPosVisuals)
-            {
-                if (hexRenderer != null)
-                    UnityEngine.Object.Destroy(hexRenderer.gameObject);
-            }
-            _unconfirmedPosVisuals.Clear();
-            _unconfirmedTilePos.Clear();
+            DebugOut.Log(this, "Destroying unconfirmed tiles...");
+            unconfirmedPosVisuals.ClearVisuals();
         }
 
         /// <summary>
-        /// Destroys the list of confirmed tile visuals and positions.
+        /// Destroys the visuals of confirmed HexCoords.
         /// </summary>
-        private void _DestoryConfirmedTiles()
+        private void DestoryConfirmedTiles()
         {
-            DebugOut.Log(this, "Destroying confirmed tiles.");
-
-            foreach (HexRenderer hexRenderer in _confirmedPosVisuals)
-            {
-                if (hexRenderer != null)
-                    UnityEngine.Object.Destroy(hexRenderer.gameObject);
-            }
-
-            _confirmedPosVisuals.Clear();
-            _confirmedTilePos.Clear();
+            DebugOut.Log(this, "Destroying confirmed tiles...");
+            confirmedPosVisuals.ClearVisuals();
         }
 
         #endregion
@@ -423,11 +384,11 @@ namespace StorytellersTable.Campaign.Modes
             HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer)).GetComponent<HexRenderer>();
             // Set up where the visual's position in the world
             hexRenderer.transform.position = HexMath.GetPositionFromAxial(hexCoord);
+
             // Set up HexRenderer
             hexRenderer.outerSize = Singleton.Instance.outerSize;
             hexRenderer.innerSize = Singleton.Instance.innerSize;
             hexRenderer.height = height;
-            //hexRenderer.isFlatTopped = Singleton.Instance.isFlatTopped;
             hexRenderer.SetMaterial(mat);
             hexRenderer.DrawMesh();
 
@@ -498,8 +459,8 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void CheckToDestoryConfirmUi()
         {
-            // don't destroy the ui if there are tiles that are not placed down yet.
-            if (_confirmedTilePos.Count > 0)
+            // don't destroy the ui if there are "confirmed tiles" chosen.
+            if (confirmedPosVisuals.Count() > 0)
                 return;
 
             DestroyConfirmUi();

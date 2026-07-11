@@ -24,7 +24,7 @@ namespace StorytellersTable.Core.Data
 
         public TileData(HexCoord hexCoord, float yPos, int height = 1, string tileTypeId = "Grass")
         {
-            this.yPos = yPos;
+            this.yPos = yPos; // -> derived from height maybe?
             this.hexCoord = hexCoord;
             this.height = height;
             this.tileTypeId = tileTypeId;
