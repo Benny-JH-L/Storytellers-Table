@@ -68,6 +68,7 @@ namespace StorytellersTable.Campaign.Modes
             // Update to the correct mode type
             switch (EditMode)
             {
+                // tile
                 case EditModeTypes.tilePlace:
                     TogglePlace();
                     break;
@@ -75,6 +76,16 @@ namespace StorytellersTable.Campaign.Modes
                     ToggleRemove();
                     break;
                 case EditModeTypes.tileEdit:
+                    ToggleEdit();
+                    break;
+                // label
+                case EditModeTypes.labelPlace:
+                    TogglePlace();
+                    break;
+                case EditModeTypes.labelRemove:
+                    ToggleRemove();
+                    break;
+                case EditModeTypes.labelEdit:
                     ToggleEdit();
                     break;
             }

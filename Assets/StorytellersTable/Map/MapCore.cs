@@ -31,6 +31,11 @@ namespace StorytellersTable.Core.Data
             targetNestedMapId = String.Empty;
         }
 
+        public Material GetMaterial()
+        {
+            return Singleton.Instance.defaultTileMaterial; // for now we'll use the default tile material
+        }
+
         public override string ToString()
         {
             return $"HexCoord{hexCoord.ToString()} | elev[{height}] | tileType[{tileTypeId} | nestedMapTarget[{targetNestedMapId}]]";

@@ -35,7 +35,7 @@ namespace StorytellersTable.Renderer
         public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
         public float outerSize;     // size of the outer hexagon
         public float height;        // TileData's height represent this
-        public bool isFlatTopped;
+        //public bool isFlatTopped;
 
 
         private void Awake()
@@ -69,14 +69,14 @@ namespace StorytellersTable.Renderer
              * Instead of generating a mesh for each hex renderer instance, we can reuse the same mesh if they have the same
              * inner size, outer size, height, and is flat topped or not.
              */
-            var meshKey = (innerSize, outerSize, height, isFlatTopped);
+            var meshKey = (innerSize, outerSize, height, Singleton.Instance.isFlatTopped);
 
             // Try to get the cached mesh with key
             if (!_meshRegistry.TryGetValue(meshKey, out Mesh sharedMesh) || sharedMesh == null)
             {
                 // create the new mesh for the registry
                 sharedMesh = new Mesh();
-                sharedMesh.name = $"Shared_HexMesh_{innerSize}_{outerSize}_{height}_{isFlatTopped}";
+                sharedMesh.name = $"Shared_HexMesh_{innerSize}_{outerSize}_{height}_{Singleton.Instance.isFlatTopped}";
 
                 List<Face> faces = _DrawFaces();
                 _CombineFaces(sharedMesh, faces);
@@ -156,7 +156,7 @@ namespace StorytellersTable.Renderer
         /// <returns></returns>
         protected Vector3 GetPoint(float size, float height, int index)
         {
-            float angle_deg = isFlatTopped ? (60 * index) : (60 * index) - 30;
+            float angle_deg = Singleton.Instance.isFlatTopped ? (60 * index) : (60 * index) - 30;
             float angle_rad = Mathf.PI / 180f * angle_deg;  // radians
             return new Vector3((size * Mathf.Cos(angle_rad)), height, (size * Mathf.Sin(angle_rad)));
         }

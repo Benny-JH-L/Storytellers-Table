@@ -12,9 +12,14 @@ public class Singleton : MonoBehaviour
     public static Singleton Instance { get; private set; }
 
     [Header("Tile")]
-    public Material defaultTileMaterial;
-    public Material ghostTileMaterial;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
-    public Material ghostTileMaterial2;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
+    [SerializeField] public Material defaultTileMaterial;
+    [SerializeField] public Material ghostTileMaterial;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
+    [SerializeField] public Material ghostTileMaterial2;      // for now it will be one material, can change it in the future to reflect the specific tile type (ie snow, grass, etc.)
+
+    [Header("Hex Visual")]
+    [SerializeField] public float innerSize = 0f;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
+    [SerializeField] public float outerSize = 1f;     // size of the outer hexagon
+    [SerializeField] public bool isFlatTopped;
 
     private void Awake()
     {

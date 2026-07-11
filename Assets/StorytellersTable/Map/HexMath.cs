@@ -130,6 +130,87 @@ namespace StorytellersTable
 
         #endregion
 
+        #region Tile Visual Generation & World <-> Hex conversions
+
+        /// <summary>
+        /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.
+        /// This removes all floating point tracking gaps and anchors the origin natively at (0,0,0).
+        /// </summary>
+        public static Vector3 GetPositionFromAxial(HexCoord coord)
+        {
+            float xPosition = 0f;
+            float zPosition = 0f;
+            float size = Singleton.Instance.outerSize;
+
+            if (!Singleton.Instance.isFlatTopped)
+            {
+                // Pointy-Topped Basis Matrix 
+                xPosition = size * (Mathf.Sqrt(3f) * coord.q + Mathf.Sqrt(3f) / 2f * coord.r);
+                zPosition = size * (3f / 2f * coord.r);
+            }
+            else
+            {
+                // Flat-Topped Basis Matrix
+                xPosition = size * (3f / 2f * coord.q);
+                zPosition = size * (Mathf.Sqrt(3f) / 2f * coord.q + Mathf.Sqrt(3f) * coord.r);
+            }
+
+            // Inverting the Z axis to maintain your layout structure starting from top-left progression
+            return new Vector3(xPosition, 0f, -zPosition);
+        }
+
+        /// <summary>
+        /// Converts a 3D world position (using X and Y) into a discrete integer Axial HexCoord.
+        /// </summary>
+        /// <param name="worldPos"></param>
+        /// <returns></returns>
+        public static HexCoord WorldToAxial(Vector3 worldPos)
+        {
+            float size = Singleton.Instance.outerSize;
+            float fracQ, fracR;
+            float worldX = worldPos.x;
+            float worldZ = -worldPos.z; // apply layout space restoration up front
+
+            if (!Singleton.Instance.isFlatTopped)
+            {
+                // Pointy-top matrix inversion transformation
+                fracQ = (Mathf.Sqrt(3f) / 3f * worldX - 1f / 3f * worldZ) / size;
+                fracR = (2f / 3f * worldZ) / size;
+            }
+            else
+            {
+                // Flat-top matrix inversion transformation
+                fracQ = (2f / 3f * worldX) / size;
+                fracR = (-1f / 3f * worldX + Mathf.Sqrt(3f) / 3f * worldZ) / size;
+            }
+
+            // Convert to 3D cube coordinates to do robust rounding (ensuring q + r + s = 0)
+            float fracS = -fracQ - fracR;
+
+            int q = Mathf.RoundToInt(fracQ);
+            int r = Mathf.RoundToInt(fracR);
+            int s = Mathf.RoundToInt(fracS);
+
+            // Calculate the rounding deltas
+            float qDiff = Mathf.Abs(q - fracQ);
+            float rDiff = Mathf.Abs(r - fracR);
+            float sDiff = Mathf.Abs(s - fracS);
+
+            // Re-adjust the axis with the largest rounding error to satisfy q + r + s = 0
+            if (qDiff > rDiff && qDiff > sDiff)
+            {
+                q = -r - s;
+            }
+            else if (rDiff > sDiff)
+            {
+                r = -q - s;
+            }
+            // (If sDiff is largest, no adjustments to q or r are required)
+
+            return new HexCoord(q, r);
+        }
+
+        #endregion
     }
 
 }

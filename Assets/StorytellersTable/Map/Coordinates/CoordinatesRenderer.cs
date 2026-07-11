@@ -57,7 +57,7 @@ namespace StorytellersTable.Renderer
             tmpGUI.transform.SetParent(this.transform, true);
 
             // Set the labels position in the world
-            Vector3 pos = StorytellersTable.Campaign.Modes.MapEditMode.GetPositionFromAxial(hexCoord); // ensure correct position is used
+            Vector3 pos = HexMath.GetPositionFromAxial(hexCoord); // ensure correct position is used
             pos.y += _yOffset + (tileData.height / 2f) + tileData.yPos;   // offset y based on tile data
             tmpGUI.transform.position = pos;
             tmpGUI.transform.rotation = Quaternion.Euler(90f, 0f, 0f);

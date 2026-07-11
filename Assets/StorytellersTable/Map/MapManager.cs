@@ -13,23 +13,24 @@ namespace StorytellersTable.Map
     [DisallowMultipleComponent]
     public class MapManager : MonoBehaviour
     {
+        private readonly static string simulatedSwitch = "1";   // simulates map switching id
+
         public static MapManager Instance { get; private set; }
 
         [SerializeField] public Vector2Int defaultMapSize = new Vector2Int(5, 5);
-
-        // used to store hex tile visual
-        [SerializeField] public GameObject hexRendererParent;
-        // handles axial coordinate visuals of tiles in the map
-        [SerializeField] public CoordinatesRenderer coordinatesRenderer;
-
-        private readonly static string simulatedSwitch = "1";   // simulates map switching id
-
-        public MapData ActiveMapData { get; private set; }
 
         /// <summary>
         /// Caches loaded map datas from disk.
         /// </summary>
         private readonly Dictionary<string, MapData> _loadedMapsCache = new Dictionary<string, MapData>();
+
+        // handles axial coordinate visuals of tiles in the map
+        [SerializeField] public CoordinatesRenderer coordinatesRenderer;
+
+        // handles tile visuals of the map
+        [SerializeField] public MapTileRenderer mapTileRenderer;
+
+        public MapData ActiveMapData { get; private set; }
 
         private void Awake()
         {
@@ -42,8 +43,8 @@ namespace StorytellersTable.Map
 
             DebugOut.Log(this, "Awake()");
 
-            hexRendererParent = new GameObject("HexRendererParent");
-            hexRendererParent.transform.SetParent(this.transform, true);
+            mapTileRenderer = new GameObject("Map Tile Renderer", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
+            mapTileRenderer.transform.SetParent(this.transform, true);
 
             coordinatesRenderer = new GameObject("MapManager's Coordinate Renderer", typeof(Canvas), typeof(CoordinatesRenderer)).GetComponent<CoordinatesRenderer>();
             coordinatesRenderer.transform.SetParent(this.transform, true);
@@ -126,18 +127,7 @@ namespace StorytellersTable.Map
             DebugOut.Log(this, $"Generating a new map with id[{targetMapId}], type[{newMap.GetType()}]");
         }
 
-        /// <summary>
-        /// Add `TileData` to the active map, and generate's hex tile visual and label.
-        /// </summary>
-        /// <param name="data"></param>
-        public void AddToActiveMap(TileData data)
-        {
-            ActiveMapData.tileDatas[data.hexCoord] = data;
-            GenerateHexTileVisual(data);    // add hex tile visual
-            coordinatesRenderer.AddLabel(data);     // add hex pos label
-        }
 
-        #region Map visuals: generating, clearing
         /// <summary>
         /// Loads map visuals: tiles, labels, entities, etc.
         /// </summary>
@@ -146,16 +136,64 @@ namespace StorytellersTable.Map
         {
             ClearActiveMapVisuals(); // clear the current map visuals before loading new ones
 
-            foreach (var pair in mapData.tileDatas)
+            foreach ((_, TileData tileData) in mapData.tileDatas)
             {
                 // Generate tile visuals
-                GenerateHexTileVisual(pair.Value);
+                mapTileRenderer.AddHexTileVisual(tileData);
 
                 // Generate hex coord labels
-                coordinatesRenderer.AddLabel(pair.Value);
+                coordinatesRenderer.AddLabel(tileData);
             }
 
             // Other visuals ...
+        }
+
+        public void AddToActiveMap(List<TileData> tileDatas)
+        {
+            DebugOut.Log(this, "Adding tile datas...");
+            foreach (TileData data in tileDatas)
+                AddToActiveMap(data);
+        }
+
+        /// <summary>
+        /// Add <paramref name="tileData"/> to the active map, and generate's hex tile visual and label.
+        /// </summary>
+        /// <param name="tileData"></param>
+        public void AddToActiveMap(TileData tileData)
+        {
+            ActiveMapData.tileDatas[tileData.hexCoord] = tileData;
+            mapTileRenderer.AddHexTileVisual(tileData);    // add hex tile visual
+            coordinatesRenderer.AddLabel(tileData);        // add hex pos label
+        }
+
+        /// <summary>
+        /// Removes all items in <paramref name="data"/> from the active map, their visual, coordinate label, and tile data.
+        /// </summary>
+        /// <param name="data"></param>
+        public void RemoveFromActiveMap(List<TileData> data)
+        {
+            DebugOut.Log(this, "Removing tile datas...");
+            foreach (TileData tile in data)
+                RemoveFromActiveMap(tile);
+        }
+
+        /// <summary>
+        /// Removes tile with <paramref name="data"/> from the active map, its visual, coordinate label, and tile data.
+        /// </summary>
+        /// <param name="data"></param>
+        public void RemoveFromActiveMap(TileData data)
+        {
+            HexCoord hexCoord = data.hexCoord;
+            DebugOut.Log(this, $"Removed [{hexCoord}] tile");
+
+            // remove the position label
+            coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]); 
+
+            // Destroy tile visual
+            mapTileRenderer.RemoveVisual(ActiveMapData.tileDatas[hexCoord]);
+
+            // remove position & tile data from the map data
+            ActiveMapData.tileDatas.Remove(hexCoord);
         }
 
         /// <summary>
@@ -167,8 +205,7 @@ namespace StorytellersTable.Map
                 return;
 
             // Destroy tile visuals
-            foreach (Transform child in hexRendererParent.transform)
-                Destroy(child.gameObject);
+            mapTileRenderer.ClearVisuals();
 
             // Destroy hex position labels
             coordinatesRenderer.ClearLabels();
@@ -176,23 +213,7 @@ namespace StorytellersTable.Map
             // other visuals ...
         }
 
-        /// <summary>
-        /// Generate a hex tile visual using TileData to the scene.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        private void GenerateHexTileVisual(TileData data)
-        {
-            // get material based on tile data's `tileType`
-            Material tileMat = Singleton.Instance.defaultTileMaterial;
-
-            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditMode.GenerateHexRenderer(data.hexCoord, tileMat);
-            hexRenderer.transform.SetParent(hexRendererParent.transform, true);    // parent it
-        }
-
-        #endregion
-
-        #region Map Layout, Debugging, and clearing graph
+        #region Context Menu: Map Layout, Debugging
 
         /// <summary>
         /// Rebuilds the map
@@ -209,8 +230,7 @@ namespace StorytellersTable.Map
         {
             Debug.Log("Re drawing tile mesh...");
 
-            foreach (Transform child in hexRendererParent.transform)
-                child.gameObject.GetComponent<HexRenderer>().DrawMesh();
+            mapTileRenderer.ReDrawMesh();
         }
 
         /// <summary>
