@@ -198,10 +198,6 @@ namespace StorytellersTable.Campaign.Modes
             {
                 HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
             }
-            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect)
-            {
-                // compute additional "unconfirmed" tiles to potentially place, add it to the list, _unconfirmedTiles!
-            }
 
             // remove duplicate positions
             unconfirmedHexCoords = unconfirmedHexCoords.ToHashSet().ToList();
@@ -274,6 +270,9 @@ namespace StorytellersTable.Campaign.Modes
                     UpdateConfirmedTiles();
                 }
             }
+            // Update confirmed tiles for draw selection
+            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect && Mouse.current.leftButton.isPressed)
+                UpdateConfirmedTiles();
         }
 
         /// <summary>
@@ -363,7 +362,7 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void DestroyUnconfirmedTiles()
         {
-            DebugOut.Log(this, "Destroying unconfirmed tiles...");
+            //DebugOut.Log(this, "Destroying unconfirmed tiles...");
             unconfirmedPosVisuals.ClearVisuals();
         }
 

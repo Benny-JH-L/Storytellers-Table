@@ -39,7 +39,7 @@ namespace StorytellersTable
             return result;
         }
 
-        #region Ring & Area coord getting
+        #region Ring & Area & Line coord calculations
 
         /// <summary>
         /// Calculates all hex coordinates that are exactly <paramref name="radius"/> steps away from the <paramref name="center"/>.
@@ -128,9 +128,17 @@ namespace StorytellersTable
             }
         }
 
+        public static void GetLine(HexCoord start, HexCoord end, List<HexCoord> results)
+        {
+            if (start == end)
+                return;
+
+
+        }
+
         #endregion
 
-        #region Tile Visual Generation & World <-> Hex conversions
+        #region World position <-> Hex coordinate conversions
 
         /// <summary>
         /// Computes the exact 3D world position from the hex coordinate using structural basis vector matrix transformations.

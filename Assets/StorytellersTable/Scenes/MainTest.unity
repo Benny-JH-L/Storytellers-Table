@@ -766,6 +766,9 @@ MonoBehaviour:
   defaultTileMaterial: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
   ghostTileMaterial: {fileID: 4874126678125670354, guid: ea6184a8c218b5e4b83aece7f86d7715, type: 3}
   ghostTileMaterial2: {fileID: 0}
+  innerSize: 0
+  outerSize: 2
+  isFlatTopped: 0
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -845,8 +848,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StorytellersTable.Map.MapManager
   defaultMapSize: {x: 5, y: 5}
-  hexRendererParent: {fileID: 0}
   coordinatesRenderer: {fileID: 0}
+  mapTileRenderer: {fileID: 0}
 --- !u!4 &1022669222
 Transform:
   m_ObjectHideFlags: 0
