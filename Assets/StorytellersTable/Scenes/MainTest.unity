@@ -451,7 +451,7 @@ Transform:
   m_GameObject: {fileID: 308999767}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.04774, y: -1.40024, z: -1.57455}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -906,9 +906,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f81c7d7df650cfd438a9552c4df53780, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Singleton
-  defaultTileMaterial: {fileID: 2100000, guid: 69b28d4f430917340948a9a90a559a9a, type: 2}
-  ghostTileMaterial: {fileID: 2100000, guid: 8cbcb4d0c76dc5a40aa4f63d8d5fc724, type: 2}
-  ghostTileMaterial2: {fileID: 0}
+  defaultTileMaterial: {fileID: 2100000, guid: 8cbcb4d0c76dc5a40aa4f63d8d5fc724, type: 2}
   innerSize: 0
   outerSize: 2
   isFlatTopped: 0

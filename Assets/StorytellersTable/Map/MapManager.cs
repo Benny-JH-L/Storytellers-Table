@@ -168,24 +168,22 @@ namespace StorytellersTable.Map
         }
 
         /// <summary>
-        /// Removes all items in <paramref name="data"/> from the active map, their visual, coordinate label, and tile data.
+        /// Removes all items in <paramref name="datas"/> from the active map, their visual, coordinate label, and tile data.
         /// </summary>
-        /// <param name="data"></param>
-        public void RemoveFromActiveMap(List<TileData> data)
+        /// <param name="datas"></param>
+        public void RemoveFromActiveMap(List<HexCoord> datas)
         {
             DebugOut.Log(this, "Removing tile datas...");
-            foreach (TileData tile in data)
-                RemoveFromActiveMap(tile);
+            foreach (HexCoord data in datas)
+                RemoveFromActiveMap(data);
         }
 
         /// <summary>
-        /// Removes tile with <paramref name="data"/> from the active map, its visual, coordinate label, and tile data.
+        /// Removes tile with <paramref name="hexCoord"/> from the active map, its visual, coordinate label, and tile data.
         /// </summary>
-        /// <param name="data"></param>
-        public void RemoveFromActiveMap(TileData data)
+        /// <param name="hexCoord"></param>
+        public void RemoveFromActiveMap(HexCoord hexCoord)
         {
-            HexCoord hexCoord = data.hexCoord;
-
             if (!ActiveMapData.tileDatas.ContainsKey(hexCoord))
                 return;
 
@@ -236,6 +234,11 @@ namespace StorytellersTable.Map
             Debug.Log("Re drawing tile mesh...");
 
             mapTileRenderer.ReDrawMesh();
+            coordinatesRenderer.ClearLabels();
+
+            // rebuild labels
+            //foreach (var pair in ActiveMapData.tileDatas)
+            //    coordinatesRenderer.AddLabel(pair.key);
         }
 
         /// <summary>

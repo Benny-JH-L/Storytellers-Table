@@ -9,24 +9,45 @@ namespace StorytellersTable.Renderer
     /// <summary>
     /// Handles axial (hex) coordinate visuals.
     /// </summary>
-    [RequireComponent(typeof(Canvas))]
+    //[RequireComponent(typeof(Canvas))]
     public class CoordinatesRenderer : MonoBehaviour
     {
-        [SerializeField] private Canvas canvas; // canvas that renders the hex tile positions of TextMeshProUGUI
-        [SerializeField] private float _yOffset = 0.15f;
-        [SerializeField] private float _fontSize = 0.55f;
+        //[SerializeField] private Canvas canvas; // canvas that renders the hex tile positions of TextMeshProUGUI
+        [SerializeField] private float _yOffset = 0.25f;
+        [SerializeField] private float _fontSize = 5.5f;
         [SerializeField] private Vector2 _windowSize = new Vector2(1f, 2f);
 
         [SerializeField] private bool showLabels; // toggle label visibility
 
+        [Range(15, 20)]
+        [SerializeField] private int renderDistance = 15;    // radius to render labels relative to camera rig
+
         // Stores the labels at a given hex coordinate
-        private Dictionary<HexCoord, TextMeshProUGUI> _hexLabels;
+        private Dictionary<HexCoord, TextMeshPro> _hexLabels;
 
         private void Awake()
         {
-            canvas = GetComponent<Canvas>();
+            //canvas = GetComponent<Canvas>();
             showLabels = true;
             _hexLabels = new();
+        }
+
+        private void Update()
+        {
+            // Filter labels to display
+            HexCoord camRigHexCoord = HexMath.WorldToAxial(Singleton.Instance.cameraController.transform.position);
+            List<HexCoord> renderedCoords = new();
+            renderedCoords.Add(camRigHexCoord);
+            HexMath.GetHexRingArea(camRigHexCoord, renderDistance, renderedCoords);
+            foreach ((HexCoord hexCoord, TextMeshPro tmp) in _hexLabels)
+            {
+                if (!renderedCoords.Contains(hexCoord))
+                {
+                    tmp.enabled = false;
+                    continue;
+                }
+                tmp.enabled = true;
+            }
         }
 
         //comment this out when im satisfied
@@ -36,10 +57,12 @@ namespace StorytellersTable.Renderer
             {
                 foreach (var pair in _hexLabels)
                 {
-                    TextMeshProUGUI tmpGUI = pair.Value;
-                    tmpGUI.GetComponent<RectTransform>().sizeDelta = _windowSize;  // Update window size
-                    tmpGUI.fontSize = _fontSize;
-                    Vector3 pos = tmpGUI.transform.position;
+                    TextMeshPro tmp = pair.Value;
+                    tmp.GetComponent<RectTransform>().sizeDelta = _windowSize;  // Update window size
+                    tmp.fontSize = _fontSize;
+                    Vector3 pos = tmp.transform.position;
+                    //pos.y = pos.y + (pos.y - _yOffset);
+                    //tmpGUI.transform.position = pos;
                 }
             }
         }
@@ -53,26 +76,26 @@ namespace StorytellersTable.Renderer
             HexCoord hexCoord = tileData.hexCoord;
 
             // Create the label
-            TextMeshProUGUI tmpGUI = new GameObject($"Hex{tileData.hexCoord.ToString()}", typeof(TextMeshProUGUI)).GetComponent<TextMeshProUGUI>();
-            tmpGUI.transform.SetParent(this.transform, true);
+            TextMeshPro tmp = new GameObject($"Hex{tileData.hexCoord.ToString()}", typeof(TextMeshPro)).GetComponent<TextMeshPro>();
+            tmp.transform.SetParent(this.transform, true);
 
             // Set the labels position in the world
             Vector3 pos = HexMath.GetPositionFromAxial(hexCoord); // ensure correct position is used
             pos.y += _yOffset + (tileData.height / 2f) + tileData.yPos;   // offset y based on tile data
-            tmpGUI.transform.position = pos;
-            tmpGUI.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            tmp.transform.position = pos;
+            tmp.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
             // other set up
-            tmpGUI.GetComponent<RectTransform>().sizeDelta = _windowSize;
-            tmpGUI.fontSize = _fontSize;
-            tmpGUI.alignment = TextAlignmentOptions.Center;
+            tmp.GetComponent<RectTransform>().sizeDelta = _windowSize;
+            tmp.fontSize = _fontSize;
+            tmp.alignment = TextAlignmentOptions.Center;
 
             // Set text
             //tmpGUI.text = $"{hexCoord.q}\n{hexCoord.r}";
-            tmpGUI.text = $"{hexCoord.q}\n{hexCoord.r}\n{hexCoord.ToCube().s}";
+            tmp.text = $"{hexCoord.q}\n{hexCoord.r}\n{hexCoord.ToCube().s}";
 
-            tmpGUI.enabled = showLabels;
-            _hexLabels[hexCoord] = tmpGUI;
+            tmp.enabled = showLabels;
+            _hexLabels[hexCoord] = tmp;
         }
 
         /// <summary>
@@ -81,10 +104,10 @@ namespace StorytellersTable.Renderer
         /// <param name="tileData"></param>
         public void RemoveLabel(TileData tileData)
         {
-            if (_hexLabels.TryGetValue(tileData.hexCoord, out TextMeshProUGUI tmpGUI))
+            if (_hexLabels.TryGetValue(tileData.hexCoord, out TextMeshPro tmp))
             {
                 _hexLabels.Remove(tileData.hexCoord);
-                Destroy(tmpGUI.gameObject);
+                Destroy(tmp.gameObject);
             }
         }
 

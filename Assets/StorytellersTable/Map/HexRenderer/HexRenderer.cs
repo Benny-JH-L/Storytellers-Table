@@ -31,6 +31,7 @@ namespace StorytellersTable.Renderer
         // Cached Shader Property IDs for high-performance stringless lookups
         private static readonly int IsHighlightedProp = Shader.PropertyToID("_IsHighlighted");
         private static readonly int IsSelectedProp = Shader.PropertyToID("_IsSelected");
+        private static readonly int IsGhostProp = Shader.PropertyToID("_IsGhost");
 
         // Property block reused across all hex instances
         private static MaterialPropertyBlock _materialPropertyBlock;
@@ -42,7 +43,6 @@ namespace StorytellersTable.Renderer
         public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
         public float outerSize;     // size of the outer hexagon
         public float height;        // TileData's height represent this
-        //public bool isFlatTopped;
 
         private void Awake()
         {
@@ -64,7 +64,7 @@ namespace StorytellersTable.Renderer
                 DrawMesh();
         }
 
-        #region Highlight & Selection Visual states
+        #region Highlight & Selection & Ghost Visual states
 
         public void ToggleHighlight()
         {
@@ -106,6 +106,25 @@ namespace StorytellersTable.Renderer
         {
             _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
             _materialPropertyBlock.SetFloat(IsSelectedProp, isSelected ? 1f : 0f);
+            _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
+        }
+
+        public void ToggleGhostVisual()
+        {
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            float ghostVal = _materialPropertyBlock.GetFloat(IsGhostProp);
+            SetGhostVisual(ghostVal > 0 ? false : true);
+        }
+
+        /// <summary>
+        /// Toggles the ghost visual state of the hex tile.
+        /// Uses MaterialPropertyBlocks to ensure GPU instancing and batching remain unbroken.
+        /// </summary>
+        /// <param name="enable"></param>
+        public void SetGhostVisual(bool enable)
+        {
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            _materialPropertyBlock.SetFloat(IsGhostProp, enable ? 1f : 0f); // change the `IsGhost` value on the shader graph
             _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
         }
 
