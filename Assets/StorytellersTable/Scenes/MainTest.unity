@@ -907,7 +907,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Singleton
   cameraController: {fileID: 1457949021}
-  defaultTileMaterial: {fileID: 2100000, guid: 3b5cc91c3bf8cf74391252247f52fb59, type: 2}
+  defaultTileMaterial: {fileID: 2100000, guid: 8cbcb4d0c76dc5a40aa4f63d8d5fc724, type: 2}
   innerSize: 0
   outerSize: 2
   isFlatTopped: 0
