@@ -59,6 +59,72 @@ namespace StorytellersTable.Renderer
                 RemoveVisual(data);
         }
 
+
+        #region tile highlight visual
+
+        public void HighlightHexTile(List<HexCoord> datas)
+        {
+            foreach (HexCoord data in datas)
+                HighlightHexTile(data);
+        }
+        public void HighlightHexTile(HexCoord hexCoord)
+        {
+            if (!tileVisuals.ContainsKey(hexCoord))
+                return;
+
+            tileVisuals[hexCoord].SetHighlight(true);
+        }
+
+        public void DehighlightHexTile(List<HexCoord> datas)
+        {
+            foreach (HexCoord data in datas)
+                DehighlightHexTile(data);
+        }
+        public void DehighlightHexTile(HexCoord hexCoord)
+        {
+            if (!tileVisuals.ContainsKey(hexCoord))
+                return;
+
+            tileVisuals[hexCoord].SetHighlight(false);
+        }
+
+        public void DehighlightAllHexTiles()
+        {
+            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
+                HexRenderer.SetHighlight(false);
+        }
+        #endregion
+
+        #region tile selection visual
+
+        public void SetSelectedVisual(List<HexCoord> datas, bool enable)
+        {
+            foreach (HexCoord hexCoord in datas)
+                SetSelectedVisual(hexCoord, enable);
+        }
+
+        public void SetSelectedVisual(HexCoord hexCoord, bool enable)
+        {
+            if (!tileVisuals.ContainsKey(hexCoord))
+                return;
+
+            tileVisuals[hexCoord].SetSelectedVisual(enable);
+        }
+
+        public void DisableAllSelectedVisuals()
+        {
+            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
+                HexRenderer.SetSelectedVisual(false);
+        }
+
+        public void DisableAllHighlights()
+        {
+            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
+                HexRenderer.SetHighlight(false);
+        }
+        
+        #endregion
+
         ///// <summary>
         ///// Add visual data from another MapTileRenderer instance to this instance, cannot be null.
         ///// </summary>

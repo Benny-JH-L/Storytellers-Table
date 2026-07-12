@@ -1,4 +1,5 @@
 ﻿
+using StorytellersTable.Utility.Log;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -27,16 +28,21 @@ namespace StorytellersTable.Renderer
         // Registry for flyweight mesh caching
         private static readonly Dictionary<(float innerSize, float outerSize, float height, bool isFlatTopped), Mesh> _meshRegistry = new();
 
+        // Cached Shader Property IDs for high-performance stringless lookups
+        private static readonly int IsHighlightedProp = Shader.PropertyToID("_IsHighlighted");
+        private static readonly int IsSelectedProp = Shader.PropertyToID("_IsSelected");
+
+        // Property block reused across all hex instances
+        private static MaterialPropertyBlock _materialPropertyBlock;
+
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
 
-        [Header("Hex")]
-        [SerializeField] private Material _material;    // only for debugging, will be removed
+        [Header("Hex properties")]
         public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
         public float outerSize;     // size of the outer hexagon
         public float height;        // TileData's height represent this
         //public bool isFlatTopped;
-
 
         private void Awake()
         {
@@ -44,10 +50,10 @@ namespace StorytellersTable.Renderer
             _meshRenderer = GetComponent<MeshRenderer>();
         }
 
-        //private void OnEnable()   // causing erros bc it is called when outerRadius,inner radius and height are 0, only use when doing single tile viewing and editing
-        //{
-        //    DrawMesh();
-        //}
+        private void OnEnable()
+        {
+            _materialPropertyBlock = new MaterialPropertyBlock();
+        }
 
         //comment this out when im satisfied
         public void OnValidate()
@@ -57,6 +63,53 @@ namespace StorytellersTable.Renderer
             if (Application.isPlaying)
                 DrawMesh();
         }
+
+        #region Highlight & Selection Visual states
+
+        public void ToggleHighlight()
+        {
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            float highlightVal = _materialPropertyBlock.GetFloat(IsHighlightedProp);
+            SetHighlight(highlightVal > 0 ? false : true);  // if highlightVal is > 0, highlight is on then we need to turn it off.
+        }
+
+        /// <summary>
+        /// Toggles the hover/highlight visual state of the hex tile. 
+        /// Uses MaterialPropertyBlocks to ensure GPU instancing and batching remain unbroken.
+        /// </summary>
+        /// <param name="isHighlighted">True to enable highlight, false to disable.</param>
+        public void SetHighlight(bool isHighlighted)
+        {
+            // Fetch the current block to preserve any other per-instance properties
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+
+            // Assign our specific state (1 for true, 0 for false)
+            _materialPropertyBlock.SetFloat(IsHighlightedProp, isHighlighted ? 1f : 0f);
+            
+            // Reapply the block to the renderer
+            _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
+        }
+
+        public void ToggleSelectedVisual()
+        {
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            float selectedVal = _materialPropertyBlock.GetFloat(IsSelectedProp);
+            SetSelectedVisual(selectedVal > 0 ? false : true);  // if selectedVal is > 0, selected visual is on then we need to turn it off.
+        }
+
+        /// <summary>
+        /// Toggles the selection visual state of the hex tile.
+        /// Uses MaterialPropertyBlocks to ensure GPU instancing and batching remain unbroken.
+        /// </summary>
+        /// <param name="isSelected">True to enable selection outline/color, false to disable.</param>
+        public void SetSelectedVisual(bool isSelected)
+        {
+            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            _materialPropertyBlock.SetFloat(IsSelectedProp, isSelected ? 1f : 0f);
+            _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
+        }
+
+        #endregion
 
         /// <summary>
         /// Generates the mesh and updates the MeshFilter, MeshRenderer, and hexPosLabel.
@@ -214,13 +267,12 @@ namespace StorytellersTable.Renderer
 
         public void SetMaterial(Material newMaterial)
         {
-            _meshRenderer.material = newMaterial;
-            //_material = newMaterial;
+            _meshRenderer.sharedMaterial = newMaterial;
         }
 
         public Material GetMaterial()
         {
-            return _meshRenderer.material;
+            return _meshRenderer.sharedMaterial;
         }
 
         /// <summary>
@@ -229,7 +281,13 @@ namespace StorytellersTable.Renderer
         /// <param name="shader"></param>
         public void SetMaterialShader(Shader shader)
         {
-            _meshRenderer.material.shader = shader;
+            if (_meshRenderer.sharedMaterial != null)
+                _meshRenderer.sharedMaterial.shader = shader;
+        }
+
+        public MeshRenderer GetMeshRenderer()
+        {
+            return _meshRenderer;
         }
 
     }

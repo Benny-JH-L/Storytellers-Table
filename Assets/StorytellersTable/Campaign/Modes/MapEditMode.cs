@@ -371,7 +371,7 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void DestoryConfirmedTiles()
         {
-            DebugOut.Log(this, "Destroying confirmed tiles...");
+            //DebugOut.Log(this, "Destroying confirmed tiles...");
             confirmedPosVisuals.ClearVisuals();
         }
 
