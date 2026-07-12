@@ -173,7 +173,7 @@ namespace StorytellersTable.Map
         /// <param name="datas"></param>
         public void RemoveFromActiveMap(List<HexCoord> datas)
         {
-            DebugOut.Log(this, "Removing tile datas...");
+            //DebugOut.Log(this, "Removing tile datas...");
             foreach (HexCoord data in datas)
                 RemoveFromActiveMap(data);
         }
@@ -187,7 +187,7 @@ namespace StorytellersTable.Map
             if (!ActiveMapData.tileDatas.ContainsKey(hexCoord))
                 return;
 
-            DebugOut.Log(this, $"Removing [{hexCoord}] tile");
+            //DebugOut.Log(this, $"Removing [{hexCoord}] tile");
 
             // remove the position label
             coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]); 

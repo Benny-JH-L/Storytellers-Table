@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using StorytellersTable.Core.Data;
 using UnityEngine;
 using TMPro;
+using System.Linq;
 
 namespace StorytellersTable.Renderer
 {
@@ -14,7 +15,7 @@ namespace StorytellersTable.Renderer
     {
         //[SerializeField] private Canvas canvas; // canvas that renders the hex tile positions of TextMeshProUGUI
         [SerializeField] private float _yOffset = 0.25f;
-        [SerializeField] private float _fontSize = 5.5f;
+        [SerializeField] private float _fontSize = 5f;
         [SerializeField] private Vector2 _windowSize = new Vector2(1f, 2f);
 
         [SerializeField] private bool showLabels; // toggle label visibility
@@ -36,16 +37,23 @@ namespace StorytellersTable.Renderer
         {
             // Filter labels to display
             HexCoord camRigHexCoord = HexMath.WorldToAxial(Singleton.Instance.cameraController.transform.position);
-            List<HexCoord> renderedCoords = new();
-            renderedCoords.Add(camRigHexCoord);
-            HexMath.GetHexRingArea(camRigHexCoord, renderDistance, renderedCoords);
+            List<HexCoord> tmpList = new();
+            tmpList.Add(camRigHexCoord);
+            HexMath.GetHexRingArea(camRigHexCoord, renderDistance, tmpList);
+
+            HashSet<HexCoord> tmpSet = tmpList.ToHashSet<HexCoord>();   // convert to hash set for quicker look up
+            Vector3 camForward = Camera.main.transform.forward;
+
+            // Update each label
             foreach ((HexCoord hexCoord, TextMeshPro tmp) in _hexLabels)
             {
-                if (!renderedCoords.Contains(hexCoord))
+                if (!tmpSet.Contains(hexCoord))
                 {
                     tmp.enabled = false;
                     continue;
                 }
+
+                tmp.transform.forward = camForward;
                 tmp.enabled = true;
             }
         }
@@ -83,10 +91,14 @@ namespace StorytellersTable.Renderer
             Vector3 pos = HexMath.GetPositionFromAxial(hexCoord); // ensure correct position is used
             pos.y += _yOffset + (tileData.height / 2f) + tileData.yPos;   // offset y based on tile data
             tmp.transform.position = pos;
-            tmp.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            //tmp.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            
+            Vector3 camFwd = Camera.main.transform.forward;
+            tmp.transform.forward = camFwd;
 
             // other set up
-            tmp.GetComponent<RectTransform>().sizeDelta = _windowSize;
+            tmp.rectTransform.sizeDelta = _windowSize;
+            tmp.enableAutoSizing = false;
             tmp.fontSize = _fontSize;
             tmp.alignment = TextAlignmentOptions.Center;
 
