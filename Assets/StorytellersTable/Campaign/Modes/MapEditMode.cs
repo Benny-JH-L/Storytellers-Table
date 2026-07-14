@@ -68,6 +68,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private readonly AreaEditData areaEditData;
         private readonly ModeContainer _editModes;
+        private bool selectOn;  // selection/deselction state
 
         // values edit by the UI
         private static string tileTypeId = "Sweet :)";
@@ -96,19 +97,21 @@ namespace StorytellersTable.Campaign.Modes
 
             areaEditData = new AreaEditData();
             _editModes = new ModeContainer();
+            selectOn = true;
 
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
             _inputMap.Selection.ToggleRadial.performed += _editModes.ToggleRadialSelect;
             _inputMap.Selection.ToggleArea.performed += _editModes.ToggleAreaSelect;
             _inputMap.Selection.ToggleDraw.performed += _editModes.ToggleDrawSelect;
+            _inputMap.Selection.ToggleDeselect.performed += ToggleSelect;
             _inputMap.Selection.ClearSelection.performed += ClearConfirmedPositions;
 
             // Add callbacks to toggle between tile/label edit, remove, and placement
             _inputMap.Edit.ToggleTileMode.performed += _editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedPositions;
 
-            _inputMap.Edit.ToggleEdit.performed += EditModeToggled;
+            _inputMap.Edit.ToggleEdit.performed += ToggleEditMode;
             _inputMap.Edit.ToggleEdit.performed += _editModes.ToggleEdit;
             _inputMap.Edit.TogglePlace.performed += ClearConfirmedPositions;
             _inputMap.Edit.TogglePlace.performed += _editModes.TogglePlace;
@@ -300,15 +303,6 @@ namespace StorytellersTable.Campaign.Modes
                 //if (_unconfirmedTilePos.Count == 0)
                 return;
 
-            // load confimation ui for placement/removal modes
-            if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
-                LoadConfirmCancelUi();
-            // load Ui for tile / label editing
-            else
-            {
-                
-            }
-
             // In PlacementMode, create new confirmed visuals from ghostMapRenderer
             if (_editModes.IsPlacementOn())
             {
@@ -322,6 +316,15 @@ namespace StorytellersTable.Campaign.Modes
             else
             {
                 MapManager.Instance.mapTileRenderer.SetSelectedVisual(unconfirmedHexCoords, true);
+            }
+
+            // load confimation ui for placement/removal modes
+            if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
+                LoadConfirmCancelUi();
+            // load Ui for tile / label editing
+            else
+            {
+
             }
 
             confirmedHexCoords.AddRange(unconfirmedHexCoords);
@@ -439,7 +442,7 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions();
         }
 
-        private void EditModeToggled(InputAction.CallbackContext context)
+        private void ToggleEditMode(InputAction.CallbackContext context)
         {
             if (_editModes.IsEditOn())
                 return;
@@ -448,6 +451,15 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions(context);
         }
 
+        /// <summary>
+        /// Toggles selection, (either select on or deselect on).
+        /// </summary>
+        /// <param name="context"></param>
+        private void ToggleSelect(InputAction.CallbackContext context)
+        {
+            selectOn = !selectOn;
+            DebugOut.Log(this, "Selection: " + selectOn + " (False means deselect is on)");
+        }
         // functions for Input Action call backs...
 
         #endregion

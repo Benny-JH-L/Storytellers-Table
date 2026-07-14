@@ -136,6 +136,15 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Toggle Deselect"",
+                    ""type"": ""Button"",
+                    ""id"": ""4fdc16c2-6013-40de-8f80-806fdf7b7485"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -191,6 +200,17 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Clear Selection"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a8968973-baac-4044-9580-c3acd077f92c"",
+                    ""path"": ""<Keyboard>/alt"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Toggle Deselect"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -294,6 +314,7 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         m_Selection_ToggleArea = m_Selection.FindAction("Toggle Area", throwIfNotFound: true);
         m_Selection_ToggleDraw = m_Selection.FindAction("Toggle Draw", throwIfNotFound: true);
         m_Selection_ClearSelection = m_Selection.FindAction("Clear Selection", throwIfNotFound: true);
+        m_Selection_ToggleDeselect = m_Selection.FindAction("Toggle Deselect", throwIfNotFound: true);
         // Edit
         m_Edit = asset.FindActionMap("Edit", throwIfNotFound: true);
         m_Edit_ToggleTileMode = m_Edit.FindAction("Toggle Tile Mode", throwIfNotFound: true);
@@ -386,6 +407,7 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
     private readonly InputAction m_Selection_ToggleArea;
     private readonly InputAction m_Selection_ToggleDraw;
     private readonly InputAction m_Selection_ClearSelection;
+    private readonly InputAction m_Selection_ToggleDeselect;
     /// <summary>
     /// Provides access to input actions defined in input action map "Selection".
     /// </summary>
@@ -417,6 +439,10 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Selection/ClearSelection".
         /// </summary>
         public InputAction @ClearSelection => m_Wrapper.m_Selection_ClearSelection;
+        /// <summary>
+        /// Provides access to the underlying input action "Selection/ToggleDeselect".
+        /// </summary>
+        public InputAction @ToggleDeselect => m_Wrapper.m_Selection_ToggleDeselect;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -458,6 +484,9 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
             @ClearSelection.started += instance.OnClearSelection;
             @ClearSelection.performed += instance.OnClearSelection;
             @ClearSelection.canceled += instance.OnClearSelection;
+            @ToggleDeselect.started += instance.OnToggleDeselect;
+            @ToggleDeselect.performed += instance.OnToggleDeselect;
+            @ToggleDeselect.canceled += instance.OnToggleDeselect;
         }
 
         /// <summary>
@@ -484,6 +513,9 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
             @ClearSelection.started -= instance.OnClearSelection;
             @ClearSelection.performed -= instance.OnClearSelection;
             @ClearSelection.canceled -= instance.OnClearSelection;
+            @ToggleDeselect.started -= instance.OnToggleDeselect;
+            @ToggleDeselect.performed -= instance.OnToggleDeselect;
+            @ToggleDeselect.canceled -= instance.OnToggleDeselect;
         }
 
         /// <summary>
@@ -688,6 +720,13 @@ public partial class @MapEditAction: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnClearSelection(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Toggle Deselect" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnToggleDeselect(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Edit" which allows adding and removing callbacks.

@@ -22,6 +22,7 @@ left mouse click: select tile
 3:  toggle area select
 4:  toggle draw select
 `:  clear selected tiles/labels
+left-alt:   toggle select/deselect
 
 \:  toggle tile/label mode
 =:  toggle's tile/label placement (if off, tile edit is enabled)
