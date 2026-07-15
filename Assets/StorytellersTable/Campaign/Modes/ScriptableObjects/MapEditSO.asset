@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: MapEditSO
   m_EditorClassIdentifier: Assembly-CSharp::MapEditSO
   radius: 5
+  drawRadius: 1
