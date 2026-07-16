@@ -75,12 +75,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Hover_Offset: 0.2
     - _IsGhost: 0
     - _IsHighlighted: 0
     - _IsSelected: 0
     - _Metallic: 0
     - _QueueControl: 0
     - _QueueOffset: 0
+    - _Rise_Height: 0.75
+    - _Rise_Speed: 2.5
+    - _Rise_Start_Time: 0
     - _Roughness_Map: 0
     - _Smoothness: 0
     - _Use_Roughness_Map: 1

@@ -156,7 +156,9 @@ namespace StorytellersTable.Campaign.Modes
                 return;
 
             // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
-            ClearUnconfirmedTiles();
+            //ClearUnconfirmedTiles(); // causes issues with the rising/falling animation for hex visuals, it resetting the `rise start time`
+            ghostMapRenderer.ClearVisuals();    // Clear ghost visuals
+            unconfirmedHexCoords.Clear();       // Clear ghost coord info
 
             // Get mouse's hex coordinate based on world position 
             HexCoord mouseHexCoord;
@@ -207,7 +209,7 @@ namespace StorytellersTable.Campaign.Modes
             // remove duplicate positions
             unconfirmedHexCoords = unconfirmedHexCoords.ToHashSet().ToList();
 
-            // Handle Select / Deselect states
+            // Handle Select / Deselect states (and highlight states)
             if (selectOn)
                 HandleSelectState();
             else
@@ -299,12 +301,15 @@ namespace StorytellersTable.Campaign.Modes
             if (_editModes.IsPlacementOn())
             {
                 ghostMapRenderer.AddHexTileVisual(unconfirmedHexCoords, selectedMaterial);
-                ghostMapRenderer.SetGhostVisual(unconfirmedHexCoords, true);
+                ghostMapRenderer.EnableGhostVisual(unconfirmedHexCoords, true);
             }
             // Edit or removal mode, highlight existing tiles
             else
             {
-                MapManager.Instance.mapTileRenderer.SetHighlight(unconfirmedHexCoords, true);
+                // Disable highlight of tiles not in the unconfirmed list
+                MapManager.Instance.mapTileRenderer.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+                // Enable highlight of tiles
+                MapManager.Instance.mapTileRenderer.EnableHighlight(unconfirmedHexCoords, true);
             }
         }
 
@@ -316,19 +321,24 @@ namespace StorytellersTable.Campaign.Modes
             // Placement mode, highlight hex coords to deselect (ie remove from confirmed list)
             if (_editModes.IsPlacementOn())
             {
-                confirmedPosVisuals.DisableAllHighlights();
-                confirmedPosVisuals.SetHighlight(unconfirmedHexCoords, true); // highlights ghost tiles the mouse is over (based on selection mode)
+                // Disable highlight of tiles not in the unconfirmed list
+                confirmedPosVisuals.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+
+                // highlights ghost tiles the mouse is over (based on selection mode)
+                confirmedPosVisuals.EnableHighlight(unconfirmedHexCoords, true);
             }
             // Edit and remove mode, highlight selected hex coords on the map to unselect
             else if (confirmedHexCoords.Count > 0)
             {
+                MapManager.Instance.mapTileRenderer.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+
                 // Set highlight for coords that the unconfirmed list intersects with the confirmed list
                 HashSet<HexCoord> tmpHashSet = confirmedHexCoords.ToHashSet();
                 foreach (HexCoord hexCoord in unconfirmedHexCoords)
                 {
                     // only highlight the hex coords if unconfirmed items intersects with the confirmed list
                     if (tmpHashSet.Contains(hexCoord))
-                        MapManager.Instance.mapTileRenderer.SetHighlight(hexCoord, true);
+                        MapManager.Instance.mapTileRenderer.EnableHighlight(hexCoord, true);
                 }
             }
         }
@@ -348,7 +358,7 @@ namespace StorytellersTable.Campaign.Modes
                 //if (_unconfirmedTilePos.Count == 0)
                 return;
 
-            confirmedPosVisuals.DisableAllHighlights(); // reset highlight visuals
+            //confirmedPosVisuals.DisableAllHighlights(); // reset highlight visuals
 
             if (selectOn) // Select
             {
@@ -358,13 +368,13 @@ namespace StorytellersTable.Campaign.Modes
                     foreach ((HexCoord coord, HexRenderer hexRenderer) in ghostMapRenderer.GetVisualData())
                     {
                         confirmedPosVisuals.AddHexTileVisual(coord, selectedMaterial);
-                        confirmedPosVisuals.SetGhostVisual(coord, true);
+                        confirmedPosVisuals.EnableGhostVisual(coord, true);
                     }
                 }
                 // For edit and removal modes, set the selected visual state to true
                 else
                 {
-                    MapManager.Instance.mapTileRenderer.SetSelectedVisual(unconfirmedHexCoords, true);
+                    MapManager.Instance.mapTileRenderer.EnableSelectedVisual(unconfirmedHexCoords, true);
                 }
 
                 confirmedHexCoords.AddRange(unconfirmedHexCoords);
@@ -379,7 +389,7 @@ namespace StorytellersTable.Campaign.Modes
                 // For edit and removal modes, set the selected visual state to false
                 else
                 {
-                    MapManager.Instance.mapTileRenderer.SetSelectedVisual(unconfirmedHexCoords, false);
+                    MapManager.Instance.mapTileRenderer.EnableSelectedVisual(unconfirmedHexCoords, false);
                 }
 
                 // Remove coords from confirmed list, update the confirmed list
@@ -458,8 +468,10 @@ namespace StorytellersTable.Campaign.Modes
 
             // Clear ghost visuals
             ghostMapRenderer.ClearVisuals();
+
             // Disable tile highlight
             MapManager.Instance.mapTileRenderer.DisableAllHighlights();
+
             unconfirmedHexCoords.Clear();
         }
 
@@ -473,6 +485,7 @@ namespace StorytellersTable.Campaign.Modes
 
             confirmedPosVisuals.ClearVisuals();
             MapManager.Instance.mapTileRenderer.DisableAllSelectedVisuals();
+            MapManager.Instance.mapTileRenderer.DisableAllHighlights();
             confirmedHexCoords.Clear();
         }
 
@@ -537,6 +550,7 @@ namespace StorytellersTable.Campaign.Modes
         {
             selectOn = !selectOn;
             DebugOut.Log(this, "Selection: " + selectOn + " (False means deselect is on)");
+            ClearUnconfirmedTiles();
         }
         // functions for Input Action call backs...
 
