@@ -68,6 +68,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private readonly AreaEditData areaEditData;
         private readonly ModeContainer _editModes;
+        private bool selectOn;  // selection/deselction state
 
         // values edit by the UI
         private static string tileTypeId = "Sweet :)";
@@ -96,19 +97,21 @@ namespace StorytellersTable.Campaign.Modes
 
             areaEditData = new AreaEditData();
             _editModes = new ModeContainer();
+            selectOn = true;
 
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
             _inputMap.Selection.ToggleRadial.performed += _editModes.ToggleRadialSelect;
             _inputMap.Selection.ToggleArea.performed += _editModes.ToggleAreaSelect;
             _inputMap.Selection.ToggleDraw.performed += _editModes.ToggleDrawSelect;
+            _inputMap.Selection.ToggleDeselect.performed += ToggleSelect;
             _inputMap.Selection.ClearSelection.performed += ClearConfirmedPositions;
 
             // Add callbacks to toggle between tile/label edit, remove, and placement
             _inputMap.Edit.ToggleTileMode.performed += _editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedPositions;
 
-            _inputMap.Edit.ToggleEdit.performed += EditModeToggled;
+            _inputMap.Edit.ToggleEdit.performed += ToggleEditMode;
             _inputMap.Edit.ToggleEdit.performed += _editModes.ToggleEdit;
             _inputMap.Edit.TogglePlace.performed += ClearConfirmedPositions;
             _inputMap.Edit.TogglePlace.performed += _editModes.TogglePlace;
@@ -153,7 +156,9 @@ namespace StorytellersTable.Campaign.Modes
                 return;
 
             // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
-            ClearUnconfirmedTiles();
+            //ClearUnconfirmedTiles(); // causes issues with the rising/falling animation for hex visuals, it resetting the `rise start time`
+            ghostMapRenderer.ClearVisuals();    // Clear ghost visuals
+            unconfirmedHexCoords.Clear();       // Clear ghost coord info
 
             // Get mouse's hex coordinate based on world position 
             HexCoord mouseHexCoord;
@@ -198,12 +203,60 @@ namespace StorytellersTable.Campaign.Modes
             // Draw (for radius)
             else if (_editModes.SelectionMode == SelectModeTypes.drawSelect)
             {
-                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius, unconfirmedHexCoords);
+                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius - 1, unconfirmedHexCoords);    // offset draw radius by 1, so draw radius of 1 means single tile, 2 means 1 tiles from the center.
             }
 
             // remove duplicate positions
             unconfirmedHexCoords = unconfirmedHexCoords.ToHashSet().ToList();
 
+            // Handle Select / Deselect states (and highlight states)
+            if (selectOn)
+                HandleSelectState();
+            else
+                HandleDeselectState();
+
+
+            // Update confirmed tiles
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                // Area mode check
+                if (_editModes.SelectionMode == SelectModeTypes.areaSelect)
+                {
+                    // Set the starting position
+                    if (!areaEditData.startDefined)
+                    {
+                        areaEditData.AreaEditStart = mouseHexCoord;
+                        areaEditData.startDefined = true;
+                    }
+                    // Deselect the start if clicked again
+                    else if (areaEditData.startDefined && areaEditData.AreaEditStart == mouseHexCoord)
+                        areaEditData.startDefined = false;
+                    // Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
+                    else
+                    {
+                        UpdateConfirmedTiles();
+                        areaEditData.startDefined = false;
+                    }
+                }
+                else
+                {
+                    UpdateConfirmedTiles();
+                }
+            }
+            // Update confirmed tiles for draw selection
+            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect && Mouse.current.leftButton.isPressed)
+                UpdateConfirmedTiles();
+        }
+
+        #region handling select & deselect state
+        /// <summary>
+        /// In the select state, updates confirmed list, or unconfirmed list, based on Selection Mode: Radial, Area, Single, or Draw selection.
+        /// </summary>
+        /// <remarks>
+        /// For PlacementMode, updates ghost visuals. For Edit and Removal modes, updates the higlight state of unconfirmed tiles.
+        /// </remarks>
+        private void HandleSelectState()
+        {
             // Remove duiplicate hex positions that already exist in confirmed positions list
             foreach (HexCoord pos in confirmedHexCoords)
             {
@@ -248,83 +301,121 @@ namespace StorytellersTable.Campaign.Modes
             if (_editModes.IsPlacementOn())
             {
                 ghostMapRenderer.AddHexTileVisual(unconfirmedHexCoords, selectedMaterial);
-                ghostMapRenderer.SetGhostVisual(unconfirmedHexCoords, true);
+                ghostMapRenderer.EnableGhostVisual(unconfirmedHexCoords, true);
             }
             // Edit or removal mode, highlight existing tiles
             else
             {
-                MapManager.Instance.mapTileRenderer.SetHighlight(unconfirmedHexCoords, true);
+                // Disable highlight of tiles not in the unconfirmed list
+                MapManager.Instance.mapTileRenderer.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+                // Enable highlight of tiles
+                MapManager.Instance.mapTileRenderer.EnableHighlight(unconfirmedHexCoords, true);
             }
-
-            // Update confirmed tiles
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                if (_editModes.SelectionMode == SelectModeTypes.areaSelect)
-                {
-                    // Set the starting position
-                    if (!areaEditData.startDefined)
-                    {
-                        areaEditData.AreaEditStart = mouseHexCoord;
-                        areaEditData.startDefined = true;
-                    }
-                    // Deselect the start if clicked again
-                    else if (areaEditData.startDefined && areaEditData.AreaEditStart == mouseHexCoord)
-                        areaEditData.startDefined = false;
-                    // Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
-                    else
-                    {
-                        UpdateConfirmedTiles();
-                        areaEditData.startDefined = false;
-                    }
-                }
-                else
-                {
-                    UpdateConfirmedTiles();
-                }
-            }
-            // Update confirmed tiles for draw selection
-            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect && Mouse.current.leftButton.isPressed)
-                UpdateConfirmedTiles();
         }
 
         /// <summary>
-        /// Updates list of confirmed tiles with the list of unconfirmed tiles. Visuals for confirmed tiles are updated.
+        /// In the deselect state, updates visuals. Ie, highlights confirmed tiles that exist in the unconfirmed list for deselection.
+        /// </summary>
+        private void HandleDeselectState()
+        {
+            // Placement mode, highlight hex coords to deselect (ie remove from confirmed list)
+            if (_editModes.IsPlacementOn())
+            {
+                // Disable highlight of tiles not in the unconfirmed list
+                confirmedPosVisuals.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+
+                // highlights ghost tiles the mouse is over (based on selection mode)
+                confirmedPosVisuals.EnableHighlight(unconfirmedHexCoords, true);
+            }
+            // Edit and remove mode, highlight selected hex coords on the map to unselect
+            else if (confirmedHexCoords.Count > 0)
+            {
+                MapManager.Instance.mapTileRenderer.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
+
+                // Set highlight for coords that the unconfirmed list intersects with the confirmed list
+                HashSet<HexCoord> tmpHashSet = confirmedHexCoords.ToHashSet();
+                foreach (HexCoord hexCoord in unconfirmedHexCoords)
+                {
+                    // only highlight the hex coords if unconfirmed items intersects with the confirmed list
+                    if (tmpHashSet.Contains(hexCoord))
+                        MapManager.Instance.mapTileRenderer.EnableHighlight(hexCoord, true);
+                }
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Updates confirmed list with the unconfirmed list. Visuals for confirmed tiles are updated.
         /// </summary>
         /// <remarks>
-        /// Unconfirmed tiles (and if applicable, its associated ghost visuals) are cleared.
+        /// Unconfirmed list (and if applicable, its associated ghost visuals) are cleared.
         /// </remarks>
         private void UpdateConfirmedTiles()
         {
-            //DebugOut.Log(this, "unconfirmed count: " + unconfirmedHexCoords.Count);
-            if ((ghostMapRenderer.Count() == 0 && _editModes.IsPlacementOn()) || unconfirmedHexCoords.Count == 0)
+            if (unconfirmedHexCoords.Count == 0)
+                //if ((ghostMapRenderer.Count() == 0 && _editModes.IsPlacementOn()) || unconfirmedHexCoords.Count == 0)
                 //if (_unconfirmedTilePos.Count == 0)
                 return;
 
-            // load confimation ui for placement/removal modes
-            if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
-                LoadConfirmCancelUi();
-            // load Ui for tile / label editing
-            else
+            //confirmedPosVisuals.DisableAllHighlights(); // reset highlight visuals
+
+            if (selectOn) // Select
             {
-                
+                // In PlacementMode, create new confirmed visuals from ghostMapRenderer
+                if (_editModes.IsPlacementOn())
+                {
+                    foreach ((HexCoord coord, HexRenderer hexRenderer) in ghostMapRenderer.GetVisualData())
+                    {
+                        confirmedPosVisuals.AddHexTileVisual(coord, selectedMaterial);
+                        confirmedPosVisuals.EnableGhostVisual(coord, true);
+                    }
+                }
+                // For edit and removal modes, set the selected visual state to true
+                else
+                {
+                    MapManager.Instance.mapTileRenderer.EnableSelectedVisual(unconfirmedHexCoords, true);
+                }
+
+                confirmedHexCoords.AddRange(unconfirmedHexCoords);
+            }
+            else // Deselect
+            {
+                // Placement mode, remove visual at hex coords from unconfirmed list
+                if (_editModes.IsPlacementOn())
+                {
+                    confirmedPosVisuals.RemoveVisual(unconfirmedHexCoords);
+                }
+                // For edit and removal modes, set the selected visual state to false
+                else
+                {
+                    MapManager.Instance.mapTileRenderer.EnableSelectedVisual(unconfirmedHexCoords, false);
+                }
+
+                // Remove coords from confirmed list, update the confirmed list
+                HashSet<HexCoord> tmpHashSet = confirmedHexCoords.ToHashSet();
+
+                foreach (HexCoord coord in unconfirmedHexCoords)
+                    tmpHashSet.Remove(coord);
+
+                confirmedHexCoords.Clear();
+                confirmedHexCoords.AddRange(tmpHashSet.ToList());
             }
 
-            // In PlacementMode, create new confirmed visuals from ghostMapRenderer
-            if (_editModes.IsPlacementOn())
+            if (confirmedHexCoords.Count > 0)   // check if we need to create or destroy UI.
             {
-                foreach ((HexCoord coord, HexRenderer hexRenderer) in ghostMapRenderer.GetVisualData())
+                // load confimation ui for placement/removal modes
+                if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
+                    LoadConfirmCancelUi();
+                // load Ui for tile / label editing
+                else
                 {
-                    confirmedPosVisuals.AddHexTileVisual(coord, selectedMaterial);
-                    confirmedPosVisuals.SetGhostVisual(coord, true);
+                    // logic...
                 }
             }
-            // For edit and removal modes, set the selected visual state
             else
-            {
-                MapManager.Instance.mapTileRenderer.SetSelectedVisual(unconfirmedHexCoords, true);
-            }
+                CheckToDestoryConfirmUi();
 
-            confirmedHexCoords.AddRange(unconfirmedHexCoords);
             ClearUnconfirmedTiles();    // will also handle clearing ghostMap visuals
         }
 
@@ -377,8 +468,10 @@ namespace StorytellersTable.Campaign.Modes
 
             // Clear ghost visuals
             ghostMapRenderer.ClearVisuals();
+
             // Disable tile highlight
             MapManager.Instance.mapTileRenderer.DisableAllHighlights();
+
             unconfirmedHexCoords.Clear();
         }
 
@@ -392,6 +485,7 @@ namespace StorytellersTable.Campaign.Modes
 
             confirmedPosVisuals.ClearVisuals();
             MapManager.Instance.mapTileRenderer.DisableAllSelectedVisuals();
+            MapManager.Instance.mapTileRenderer.DisableAllHighlights();
             confirmedHexCoords.Clear();
         }
 
@@ -439,7 +533,7 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions();
         }
 
-        private void EditModeToggled(InputAction.CallbackContext context)
+        private void ToggleEditMode(InputAction.CallbackContext context)
         {
             if (_editModes.IsEditOn())
                 return;
@@ -448,6 +542,16 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions(context);
         }
 
+        /// <summary>
+        /// Toggles selection, (either select on or deselect on).
+        /// </summary>
+        /// <param name="context"></param>
+        private void ToggleSelect(InputAction.CallbackContext context)
+        {
+            selectOn = !selectOn;
+            DebugOut.Log(this, "Selection: " + selectOn + " (False means deselect is on)");
+            ClearUnconfirmedTiles();
+        }
         // functions for Input Action call backs...
 
         #endregion

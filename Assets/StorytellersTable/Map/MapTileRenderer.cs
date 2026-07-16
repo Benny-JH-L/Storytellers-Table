@@ -69,10 +69,10 @@ namespace StorytellersTable.Renderer
         /// <remarks>Highlights tile if <paramref name="enable"/> is True. Disable's highlight otherwise.</remarks>
         /// <param name="datas"></param>
         /// <param name="enable"></param>
-        public void SetHighlight(List<HexCoord> datas, bool enable)
+        public void EnableHighlight(List<HexCoord> datas, bool enable)
         {
             foreach (HexCoord hexCoord in datas)
-                SetHighlight(hexCoord, enable);
+                EnableHighlight(hexCoord, enable);
         }
 
         /// <summary>
@@ -82,21 +82,21 @@ namespace StorytellersTable.Renderer
         /// <remarks>Highlights tile if <paramref name="enable"/> is True. Disable's highlight otherwise.</remarks>
         /// <param name="datas"></param>
         /// <param name="enable"></param>
-        public void SetHighlight(HexCoord hexCoord, bool enable)
+        public void EnableHighlight(HexCoord hexCoord, bool enable)
         {
             if (!tileVisuals.ContainsKey(hexCoord))
                 return;
 
-            tileVisuals[hexCoord].SetHighlight(enable);
+            tileVisuals[hexCoord].EnableHighlight(enable);
         }
 
-        public void SetSelectedVisual(List<HexCoord> datas, bool enable)
+        public void EnableSelectedVisual(List<HexCoord> datas, bool enable)
         {
             foreach (HexCoord hexCoord in datas)
-                SetSelectedVisual(hexCoord, enable);
+                EnableSelectedVisual(hexCoord, enable);
         }
 
-        public void SetSelectedVisual(HexCoord hexCoord, bool enable)
+        public void EnableSelectedVisual(HexCoord hexCoord, bool enable)
         {
             if (!tileVisuals.ContainsKey(hexCoord))
                 return;
@@ -104,13 +104,13 @@ namespace StorytellersTable.Renderer
             tileVisuals[hexCoord].SetSelectedVisual(enable);
         }
 
-        public void SetGhostVisual(List<HexCoord> datas, bool enable)
+        public void EnableGhostVisual(List<HexCoord> datas, bool enable)
         {
             foreach (HexCoord hexCoord in datas)
-                SetGhostVisual(hexCoord, enable);
+                EnableGhostVisual(hexCoord, enable);
         }
 
-        public void SetGhostVisual(HexCoord hexCoord, bool enable)
+        public void EnableGhostVisual(HexCoord hexCoord, bool enable)
         {
             if (!tileVisuals.ContainsKey(hexCoord))
                 return;
@@ -121,7 +121,26 @@ namespace StorytellersTable.Renderer
         public void DisableAllHighlights()
         {
             foreach ((_, HexRenderer HexRenderer) in tileVisuals)
-                HexRenderer.SetHighlight(false);
+                HexRenderer.EnableHighlight(false);
+        }
+
+        /// <summary>
+        /// Disables all highlights at HexCoords except those specified in the <paramref name="hexCoordsSet"/>.
+        /// </summary>
+        /// <remarks>
+        /// If a coordinate does not exist in the MapTileRenderer but does in <paramref name="hexCoordsSet"/> nothing will happen.
+        /// </remarks>
+        /// <param name="hexCoordsSet"></param>
+        public void DisableAllHighlightsExcept(HashSet<HexCoord> hexCoordsSet)
+        {
+            foreach (HexCoord hexCoord in tileVisuals.Keys)
+            {
+                if (hexCoordsSet.Contains(hexCoord))
+                    continue;
+
+                // Disable highlight
+                EnableHighlight(hexCoord, false);
+            }
         }
 
         public void DisableAllSelectedVisuals()

@@ -32,12 +32,18 @@ namespace StorytellersTable.Renderer
         private static readonly int IsHighlightedProp = Shader.PropertyToID("_IsHighlighted");
         private static readonly int IsSelectedProp = Shader.PropertyToID("_IsSelected");
         private static readonly int IsGhostProp = Shader.PropertyToID("_IsGhost");
+        private static readonly int RiseStartTimeProp = Shader.PropertyToID("_Rise_Start_Time");
 
-        // Property block reused across all hex instances
-        private static MaterialPropertyBlock _materialPropertyBlock;
+        // Property block
+        private MaterialPropertyBlock _materialPropertyBlock;
 
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
+
+        // Cached state flags to prevent redundant GPU pipeline operations and state check roundtrips
+        private bool _isHighlighted;
+        private bool _isSelected;
+        private bool _isGhost;
 
         [Header("Hex properties")]
         public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
@@ -53,6 +59,10 @@ namespace StorytellersTable.Renderer
         private void OnEnable()
         {
             _materialPropertyBlock = new MaterialPropertyBlock();
+
+            _isHighlighted = false;
+            _isSelected = false;
+            _isGhost = false;
         }
 
         //comment this out when im satisfied
@@ -68,9 +78,7 @@ namespace StorytellersTable.Renderer
 
         public void ToggleHighlight()
         {
-            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
-            float highlightVal = _materialPropertyBlock.GetFloat(IsHighlightedProp);
-            SetHighlight(highlightVal > 0 ? false : true);  // if highlightVal is > 0, highlight is on then we need to turn it off.
+            EnableHighlight(!_isHighlighted);
         }
 
         /// <summary>
@@ -78,23 +86,43 @@ namespace StorytellersTable.Renderer
         /// Uses MaterialPropertyBlocks to ensure GPU instancing and batching remain unbroken.
         /// </summary>
         /// <param name="isHighlighted">True to enable highlight, false to disable.</param>
-        public void SetHighlight(bool isHighlighted)
+        public void EnableHighlight(bool isHighlighted)
         {
+            // return if we're setting the same state again
+            if (_isHighlighted == isHighlighted) 
+                return;
+
+            _isHighlighted = isHighlighted;
+
             // Fetch the current block to preserve any other per-instance properties
             _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
 
-            // Assign our specific state (1 for true, 0 for false)
-            _materialPropertyBlock.SetFloat(IsHighlightedProp, isHighlighted ? 1f : 0f);
-            
+            if (_isHighlighted)
+            {
+                // Assign starting hover time
+                _materialPropertyBlock.SetFloat(RiseStartTimeProp, Time.time);
+
+                // Assign our specific state (1 for true, 0 for false)
+                _materialPropertyBlock.SetFloat(IsHighlightedProp, 1f);
+
+                #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                //DebugOut.Log(this, "Hover start time: " + Time.time);
+                #endif
+            }
+            else
+            {
+                // Reset highlight state and timer
+                _materialPropertyBlock.SetFloat(RiseStartTimeProp, -999f);
+                _materialPropertyBlock.SetFloat(IsHighlightedProp, 0f);
+            }
+
             // Reapply the block to the renderer
             _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
         }
 
         public void ToggleSelectedVisual()
         {
-            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
-            float selectedVal = _materialPropertyBlock.GetFloat(IsSelectedProp);
-            SetSelectedVisual(selectedVal > 0 ? false : true);  // if selectedVal is > 0, selected visual is on then we need to turn it off.
+            SetSelectedVisual(!_isSelected);
         }
 
         /// <summary>
@@ -104,6 +132,11 @@ namespace StorytellersTable.Renderer
         /// <param name="isSelected">True to enable selection outline/color, false to disable.</param>
         public void SetSelectedVisual(bool isSelected)
         {
+            if (_isSelected == isSelected)
+                return;
+            
+            _isSelected = isSelected;
+
             _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
             _materialPropertyBlock.SetFloat(IsSelectedProp, isSelected ? 1f : 0f);
             _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
@@ -111,20 +144,26 @@ namespace StorytellersTable.Renderer
 
         public void ToggleGhostVisual()
         {
-            _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
-            float ghostVal = _materialPropertyBlock.GetFloat(IsGhostProp);
-            SetGhostVisual(ghostVal > 0 ? false : true);
+            //_meshRenderer.GetPropertyBlock(_materialPropertyBlock);
+            //float ghostVal = _materialPropertyBlock.GetFloat(IsGhostProp);
+            //SetGhostVisual(ghostVal > 0 ? false : true);
+            SetGhostVisual(!_isGhost);
         }
 
         /// <summary>
         /// Toggles the ghost visual state of the hex tile.
         /// Uses MaterialPropertyBlocks to ensure GPU instancing and batching remain unbroken.
         /// </summary>
-        /// <param name="enable"></param>
-        public void SetGhostVisual(bool enable)
+        /// <param name="isGhost"></param>
+        public void SetGhostVisual(bool isGhost)
         {
+            if (_isGhost == isGhost)
+                return;
+
+            _isGhost = isGhost;
+
             _meshRenderer.GetPropertyBlock(_materialPropertyBlock);
-            _materialPropertyBlock.SetFloat(IsGhostProp, enable ? 1f : 0f); // change the `IsGhost` value on the shader graph
+            _materialPropertyBlock.SetFloat(IsGhostProp, isGhost ? 1f : 0f); // change the `IsGhost` value on the shader graph
             _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
         }
 
