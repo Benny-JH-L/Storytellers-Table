@@ -1,6 +1,7 @@
 ﻿
 using UnityEditor;
 using UnityEngine;
+using StorytellersTable.Campaign.Modes;
 
 [CustomEditor(typeof(TileEditContainer), true)]
 public class TileEditModeEditor : Editor
