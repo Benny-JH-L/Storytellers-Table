@@ -65,7 +65,13 @@ public class MaterialLoader : MonoBehaviour
         string matName = materialName.ToLower();
 
         if (!materialMap.ContainsKey(matName))
+        {
+            #if UNITY_EDITOR
+            DebugOut.Log(this, $"{materialName} could not be found, returning default material");
+            #endif
+
             return GetDefaultMaterial();
+        }
 
         return materialMap[matName];
     }

@@ -11,7 +11,7 @@ namespace StorytellersTable.Renderer
     /// </summary>
     public class MapTileRenderer : MonoBehaviour
     {
-        [SerializeReference] private Dictionary<HexCoord, HexRenderer> tileVisuals = new Dictionary<HexCoord, HexRenderer>();
+        [SerializeReference] private readonly Dictionary<HexCoord, HexRenderer> tileVisuals = new Dictionary<HexCoord, HexRenderer>();
 
         /// <summary>
         /// Generate a HexRenderer at the hex coordinate with material store in <paramref name="tileData"/> to the scene.
@@ -19,12 +19,13 @@ namespace StorytellersTable.Renderer
         /// </summary>
         /// <param name="tileData"></param>
         /// <param name="shader"></param>
-        public void AddHexTileVisual(HexCoord hexCoord, Material material, Shader shader = null)
+        public void AddHexTileVisual(HexCoord hexCoord, string materialName, int height, Shader shader = null)
         {
             if (tileVisuals.ContainsKey(hexCoord))
                 return;
 
-            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditMode.GenerateHexRenderer(hexCoord, material);
+            Material material = MaterialLoader.instance.GetMaterial(materialName);
+            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditMode.GenerateHexRenderer(hexCoord, material, height);
             hexRenderer.transform.SetParent(this.transform, true);    // parent it
 
             if (shader != null)
@@ -34,10 +35,23 @@ namespace StorytellersTable.Renderer
             tileVisuals.Add(hexCoord, hexRenderer);
         }
 
-        public void AddHexTileVisual(List<HexCoord> datas, Material material, Shader shader = null)
+        public void AddHexTileVisual(List<HexCoord> datas, string materialName, int height, Shader shader = null)
         {
             foreach (HexCoord data in datas)
-                AddHexTileVisual(data, material, shader);
+                AddHexTileVisual(data, materialName, height, shader);
+        }
+
+        public void AddHexTileVisual(List<TileData> datas, Shader shader = null)
+        {
+            foreach (TileData data in datas)
+            {
+                AddHexTileVisual(data, shader);
+            }
+        }
+
+        public void AddHexTileVisual(TileData tileData, Shader shader = null)
+        {
+            AddHexTileVisual(tileData.hexCoord, tileData.tileTypeId, tileData.height, shader);
         }
 
         /// <summary>

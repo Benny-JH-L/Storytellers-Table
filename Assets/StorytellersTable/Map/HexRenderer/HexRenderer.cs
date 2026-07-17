@@ -26,7 +26,7 @@ namespace StorytellersTable.Renderer
     public class HexRenderer : MonoBehaviour
     {
         // Registry for flyweight mesh caching
-        private static readonly Dictionary<(float innerSize, float outerSize, float height, bool isFlatTopped), Mesh> _meshRegistry = new();
+        private static readonly Dictionary<(float innerSize, float outerSize, int height, bool isFlatTopped), Mesh> _meshRegistry = new();
 
         // Cached Shader Property IDs for high-performance stringless lookups
         private static readonly int IsHighlightedProp = Shader.PropertyToID("_IsHighlighted");
@@ -48,7 +48,7 @@ namespace StorytellersTable.Renderer
         [Header("Hex properties")]
         public float innerSize;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
         public float outerSize;     // size of the outer hexagon
-        public float height;        // TileData's height represent this
+        public int height;        // TileData's height represent this
 
         private void Awake()
         {
@@ -323,12 +323,12 @@ namespace StorytellersTable.Renderer
             targetMesh.RecalculateNormals();
         }
 
-        public void SetMaterial(Material newMaterial)
+        public void SetSharedMaterial(Material newMaterial)
         {
             _meshRenderer.sharedMaterial = newMaterial;
         }
 
-        public Material GetMaterial()
+        public Material GetSharedMaterial()
         {
             return _meshRenderer.sharedMaterial;
         }

@@ -907,10 +907,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Singleton
   cameraController: {fileID: 1457949021}
-  defaultTileMaterial: {fileID: 2100000, guid: 8cbcb4d0c76dc5a40aa4f63d8d5fc724, type: 2}
   innerSize: 0
   outerSize: 2
   isFlatTopped: 0
+  mainCanvas: {fileID: 1403335829}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -955,6 +955,37 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &949844487
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 949844488}
+  m_Layer: 0
+  m_Name: -------------------------- (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &949844488
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949844487}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 11.15572, y: 0, z: -12.82066}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1541,6 +1572,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1987216218
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1987216219}
+  - component: {fileID: 1987216220}
+  m_Layer: 0
+  m_Name: TileEditMode
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1987216219
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1987216218}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1987216220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1987216218}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8eb2b02d0376d0478c4fa0519cbfdec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TileEditMode
+  uiParentTransform: {fileID: 0}
+  tileInfoUIPrefab: {fileID: 7393379162722865544, guid: 62c6c8111b90a934f8f6aedf65487704, type: 3}
+  runtimeUI: {fileID: 0}
+  newTileTypeId: floor_tile
+  newHeight: 5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1552,10 +1632,12 @@ SceneRoots:
   - {fileID: 1179449150}
   - {fileID: 1457949020}
   - {fileID: 1022669222}
+  - {fileID: 949844488}
   - {fileID: 308999769}
+  - {fileID: 1987216219}
   - {fileID: 195430108}
   - {fileID: 133416157}
+  - {fileID: 669350967}
   - {fileID: 964174123}
   - {fileID: 256164092}
   - {fileID: 1819631956}
-  - {fileID: 669350967}

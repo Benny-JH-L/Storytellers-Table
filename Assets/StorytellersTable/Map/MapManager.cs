@@ -123,7 +123,7 @@ namespace StorytellersTable.Map
             _loadedMapsCache.Add(targetMapId, newMap);
 
             // Generate generic layout
-            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, Singleton.Instance.defaultTileMaterial);
+            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
             DebugOut.Log(this, $"Generating a new map with id[{targetMapId}], type[{newMap.GetType()}]");
         }
 
@@ -139,7 +139,7 @@ namespace StorytellersTable.Map
             foreach ((HexCoord hexCoord, TileData tileData) in mapData.tileDatas)
             {
                 // Generate tile visuals
-                mapTileRenderer.AddHexTileVisual(hexCoord, tileData.GetMaterial());
+                mapTileRenderer.AddHexTileVisual(tileData);
 
                 // Generate hex coord labels
                 coordinatesRenderer.AddLabel(tileData);
@@ -163,7 +163,7 @@ namespace StorytellersTable.Map
         {
             HexCoord hexCoord = tileData.hexCoord;
             ActiveMapData.tileDatas[hexCoord] = tileData;
-            mapTileRenderer.AddHexTileVisual(hexCoord, tileData.GetMaterial());    // add hex tile visual
+            mapTileRenderer.AddHexTileVisual(tileData);    // add hex tile visual
             coordinatesRenderer.AddLabel(tileData);        // add hex pos label
         }
 
@@ -200,6 +200,22 @@ namespace StorytellersTable.Map
         }
 
         /// <summary>
+        /// Set new tile data based on the HexCoord in <paramref name="newData"/>.
+        /// </summary>
+        /// <param name="newData"></param>
+        public void SetNewTileData(TileData newData)
+        {
+            HexCoord hexCoord = newData.hexCoord;
+
+            // Update the coordinate renderer
+            coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]);
+            coordinatesRenderer.AddLabel(ActiveMapData.tileDatas[hexCoord]);
+
+            // Set the new data
+            ActiveMapData.tileDatas[hexCoord] = newData;
+        }
+
+        /// <summary>
         /// Clear map visuals of the current map, labels, tiles, entities, etc,
         /// </summary>
         private void ClearActiveMapVisuals()
@@ -225,7 +241,7 @@ namespace StorytellersTable.Map
         public void RebuildMap()
         {
             Debug.Log($"Re building map of size q={defaultMapSize.x}, r={defaultMapSize.y}...");
-            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, Singleton.Instance.defaultTileMaterial);
+            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
         }
 
         [ContextMenu("Re Draw Hex Tile Mesh")] // In the Unity inspector, right click the map script, and select this 

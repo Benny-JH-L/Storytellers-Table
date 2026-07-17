@@ -13,9 +13,6 @@ public class Singleton : MonoBehaviour
 
     [SerializeField] public CameraController cameraController;
 
-    [Header("Tile")]
-    [SerializeField] public Material defaultTileMaterial;
-
     [Header("Hex Visual")]
     [SerializeField] public float innerSize = 0f;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
     [SerializeField] public float outerSize = 1f;     // size of the outer hexagon

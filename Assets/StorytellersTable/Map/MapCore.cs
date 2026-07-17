@@ -33,7 +33,7 @@ namespace StorytellersTable.Core.Data
 
         public Material GetMaterial()
         {
-            return Singleton.Instance.defaultTileMaterial; // for now we'll use the default tile material
+            return MaterialLoader.instance.GetMaterial(tileTypeId);
         }
 
         public override string ToString()

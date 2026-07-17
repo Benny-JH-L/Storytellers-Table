@@ -71,9 +71,10 @@ namespace StorytellersTable.Campaign.Modes
         private bool selectOn;  // selection/deselction state
 
         // values edit by the UI
-        private static string tileTypeId = "Sweet :)";
-        private static int height = 1;
-        private Material selectedMaterial;          // material of tiles
+        public string placementMaterialName = String.Empty;
+        public static int height_placement = 1;   // for placement mode
+
+        private TileEditContainer tileEditMode;
 
         public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
         {
@@ -92,12 +93,13 @@ namespace StorytellersTable.Campaign.Modes
             ghostMapRenderer = new GameObject("MapEdit - Ghost_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
             ghostMapRenderer.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
-            // Set initial material
-            selectedMaterial = Singleton.Instance.defaultTileMaterial;
-
             areaEditData = new AreaEditData();
             _editModes = new ModeContainer();
             selectOn = true;
+
+            placementMaterialName = MaterialLoader.instance.defaultMaterialName;
+
+            tileEditMode = TileEditContainer.instance;
 
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
@@ -113,10 +115,12 @@ namespace StorytellersTable.Campaign.Modes
 
             _inputMap.Edit.ToggleEdit.performed += ToggleEditMode;
             _inputMap.Edit.ToggleEdit.performed += _editModes.ToggleEdit;
-            _inputMap.Edit.TogglePlace.performed += ClearConfirmedPositions;
+
             _inputMap.Edit.TogglePlace.performed += _editModes.TogglePlace;
-            _inputMap.Edit.ToggleRemove.performed += ClearConfirmedPositions;
+            _inputMap.Edit.TogglePlace.performed += EditModeChanged;
+
             _inputMap.Edit.ToggleRemove.performed += _editModes.ToggleRemove;
+            _inputMap.Edit.ToggleRemove.performed += EditModeChanged;
             // other call backs to input map...
         }
 
@@ -128,6 +132,10 @@ namespace StorytellersTable.Campaign.Modes
                 _runtimeUiInstance = UnityEngine.Object.Instantiate(_uiPrefab, _uiParentTransform);
                 _listRuntimeUi.Add(_runtimeUiInstance);
             }
+
+            // Enable Edit mode by default
+            _editModes.ToggleEdit();
+            tileEditMode.Activate();
 
             _inputMap.Enable();
         }
@@ -215,6 +223,9 @@ namespace StorytellersTable.Campaign.Modes
             else
                 HandleDeselectState();
 
+            // Update values for tile editing mode
+            if (tileEditMode.IsActive)
+                tileEditMode.SetValues(confirmedHexCoords.ToHashSet());
 
             // Update confirmed tiles
             if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -300,7 +311,7 @@ namespace StorytellersTable.Campaign.Modes
             // Placement mode, create ghost visual for unconfirmed tiles 
             if (_editModes.IsPlacementOn())
             {
-                ghostMapRenderer.AddHexTileVisual(unconfirmedHexCoords, selectedMaterial);
+                ghostMapRenderer.AddHexTileVisual(unconfirmedHexCoords, placementMaterialName, height_placement);
                 ghostMapRenderer.EnableGhostVisual(unconfirmedHexCoords, true);
             }
             // Edit or removal mode, highlight existing tiles
@@ -319,7 +330,7 @@ namespace StorytellersTable.Campaign.Modes
         private void HandleDeselectState()
         {
             // Placement mode, highlight hex coords to deselect (ie remove from confirmed list)
-            if (_editModes.IsPlacementOn())
+            if (_editModes.IsTilePlaceOn())
             {
                 // Disable highlight of tiles not in the unconfirmed list
                 confirmedPosVisuals.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
@@ -367,7 +378,7 @@ namespace StorytellersTable.Campaign.Modes
                 {
                     foreach ((HexCoord coord, HexRenderer hexRenderer) in ghostMapRenderer.GetVisualData())
                     {
-                        confirmedPosVisuals.AddHexTileVisual(coord, selectedMaterial);
+                        confirmedPosVisuals.AddHexTileVisual(coord, placementMaterialName, hexRenderer.height);
                         confirmedPosVisuals.EnableGhostVisual(coord, true);
                     }
                 }
@@ -402,7 +413,8 @@ namespace StorytellersTable.Campaign.Modes
                 confirmedHexCoords.AddRange(tmpHashSet.ToList());
             }
 
-            if (confirmedHexCoords.Count > 0)   // check if we need to create or destroy UI.
+            // check if we need to create or destroy UI.
+            if (confirmedHexCoords.Count > 0)
             {
                 // load confimation ui for placement/removal modes
                 if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
@@ -410,7 +422,7 @@ namespace StorytellersTable.Campaign.Modes
                 // load Ui for tile / label editing
                 else
                 {
-                    // logic...
+                    // NOTE: done in another class!
                 }
             }
             else
@@ -427,7 +439,7 @@ namespace StorytellersTable.Campaign.Modes
             foreach ((HexCoord tileCoord, _) in confirmedPosVisuals.GetVisualData())    // use the MapRenderer data and not the list
             {
                 // Set `placed` material
-                TileData newData = new TileData(tileCoord, HexMath.GetPositionFromAxial(tileCoord).y, height, tileTypeId);
+                TileData newData = new TileData(tileCoord, HexMath.GetPositionFromAxial(tileCoord).y, height_placement, placementMaterialName);
                 MapManager.Instance.AddToActiveMap(newData);
             }
 
@@ -501,7 +513,7 @@ namespace StorytellersTable.Campaign.Modes
         #endregion
 
         #region hex visual generation
-        public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat)
+        public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat, int height)
         {
             HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer)).GetComponent<HexRenderer>();
             // Set up where the visual's position in the world
@@ -511,15 +523,15 @@ namespace StorytellersTable.Campaign.Modes
             hexRenderer.outerSize = Singleton.Instance.outerSize;
             hexRenderer.innerSize = Singleton.Instance.innerSize;
             hexRenderer.height = height;
-            hexRenderer.SetMaterial(mat);
+            hexRenderer.SetSharedMaterial(mat);
             hexRenderer.DrawMesh();
 
             return hexRenderer;
         }
 
-        public static HexRenderer GenerateHexRenderer(Vector3 worldPos, Material mat)
+        public static HexRenderer GenerateHexRenderer(Vector3 worldPos, Material mat, int height)
         {
-            return GenerateHexRenderer(HexMath.WorldToAxial(worldPos), mat);
+            return GenerateHexRenderer(HexMath.WorldToAxial(worldPos), mat, height);
         }
         #endregion
 
@@ -533,13 +545,32 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions();
         }
 
+        private void EditModeChanged(InputAction.CallbackContext context)
+        {
+            Stack<EditModeTypes> history = _editModes.GetEditModeHistory();
+            history.Reverse();
+            history.Pop(); // gets the current mode
+            EditModeTypes previousMode = history.Pop();
+
+            // Check if the Edit was enabled before.
+            if (previousMode == _editModes.EditMode && _editModes.IsEditOn())
+                return;
+
+            // no longer in EditMode, disable it
+            tileEditMode.Disable();
+
+            ClearConfirmedPositions();
+        }
+
         private void ToggleEditMode(InputAction.CallbackContext context)
         {
             if (_editModes.IsEditOn())
                 return;
-            
+
+            tileEditMode.Activate();
+
             // if the mode is not set to edit already, we need to clear the coordinate selection
-            ClearConfirmedPositions(context);
+            ClearConfirmedPositions();
         }
 
         /// <summary>
@@ -609,16 +640,7 @@ namespace StorytellersTable.Campaign.Modes
 
         #endregion
 
-        #region misc: LayoutMap(), SetPlacedMaterial()
-
-        /// <summary>
-        /// Change the material of the next newly placed tiles.
-        /// </summary>
-        /// <param name="newMat"></param>
-        public void SetPlacedMaterial(Material newMat)
-        {
-            selectedMaterial = newMat;
-        }
+        #region misc: LayoutMap()
 
         /// <summary>
         /// Generates a map using q, and r. q is the length of the map, and r is the height of the map.
