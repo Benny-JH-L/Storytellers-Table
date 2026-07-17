@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace StorytellersTable.Utility.Printer
 {
@@ -11,6 +12,7 @@ namespace StorytellersTable.Utility.Printer
             {
                 s += item.ToString() + ", ";
             }
+            Debug.Log(s);
         }
     }
 }

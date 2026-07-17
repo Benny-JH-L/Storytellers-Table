@@ -21,6 +21,9 @@ public class Singleton : MonoBehaviour
     [SerializeField] public float outerSize = 1f;     // size of the outer hexagon
     [SerializeField] public bool isFlatTopped = false;
 
+    [Header("UI")]
+    [SerializeField] public Transform mainCanvas;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)

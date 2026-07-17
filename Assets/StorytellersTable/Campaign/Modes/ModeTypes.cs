@@ -1,7 +1,9 @@
 ﻿
-using System;
-using UnityEngine.InputSystem;
 using StorytellersTable.Utility.Log;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.InputSystem;
 
 namespace StorytellersTable.Campaign.Modes
 {
@@ -41,12 +43,15 @@ namespace StorytellersTable.Campaign.Modes
         // True: tile mode. False: label mode
         private bool tileModeOn;
 
+        private readonly Stack<EditModeTypes> editModeHistory;
+
         public ModeContainer()
         {
             // enabled by default
             SelectionMode = SelectModeTypes.singleSelect;
             EditMode = EditModeTypes.tileEdit;
             tileModeOn = true;
+            editModeHistory = new Stack<EditModeTypes>();
         }
 
         #region edit modes
@@ -110,6 +115,7 @@ namespace StorytellersTable.Campaign.Modes
                 EditMode = EditModeTypes.labelEdit;
             }
 
+            editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Edit enabled.");
         }
 
@@ -144,6 +150,7 @@ namespace StorytellersTable.Campaign.Modes
                 EditMode = EditModeTypes.labelPlace;
             }
 
+            editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Place enabled.");
         }
 
@@ -178,6 +185,7 @@ namespace StorytellersTable.Campaign.Modes
                 EditMode = EditModeTypes.labelRemove;
             }
 
+            editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Remove enabled.");
         }
         #endregion
@@ -320,6 +328,17 @@ namespace StorytellersTable.Campaign.Modes
         public bool IsRemoveOn()
         {
             return IsTileRmvOn() || IsTLabelRmvOn();
+        }
+
+        /// <summary>
+        /// Returns a copy of the edit mode history.
+        /// </summary>
+        /// <returns></returns>
+        public Stack<EditModeTypes> GetEditModeHistory()
+        {
+            Stack<EditModeTypes> history = new Stack<EditModeTypes>(editModeHistory);
+            history.Reverse();
+            return history;
         }
         #endregion
     }

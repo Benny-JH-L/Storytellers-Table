@@ -49,6 +49,8 @@ namespace StorytellersTable.Campaign.Modes
 
             Instance = this;
 
+            _uiCanvasRoot = Singleton.Instance.mainCanvas.transform;
+
             _playActions = new PlayAction();
             _mapEditActions = new MapEditAction();
             _entityEditActions = new EntityEditAction();
