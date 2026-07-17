@@ -36,4 +36,10 @@ public class Singleton : MonoBehaviour
 
         Instance = this;
     }
+
+    private void OnEnable()
+    {
+        GameObject obj = new GameObject("Material Loader", typeof(MaterialLoader));
+        obj.transform.SetParent(this.transform, true);
+    }
 }
