@@ -70,7 +70,6 @@ namespace StorytellersTable.Campaign.Modes
         // UI
         [SerializeField] MapEditorUI mapEditorUI;
 
-        private GameObject _confirmPlacementPrefab;    // ui
 
         [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
         [SerializeField] private GameObject _runtimeConfirmPlacementUi;
@@ -105,8 +104,6 @@ namespace StorytellersTable.Campaign.Modes
             // Create the MapEditors UI
             Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas);
             mapEditorUI = MapEditorUI.instance;
-
-            _confirmPlacementPrefab = Singleton.Instance.CancelConfirmBtn;
 
             confirmedPosVisuals = new GameObject("MapEdit - Confirmed_Pos_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
             confirmedPosVisuals.transform.SetParent(CampaignModeManager.Instance.transform, true);
@@ -608,26 +605,30 @@ namespace StorytellersTable.Campaign.Modes
         /// </summary>
         private void LoadConfirmCancelUi() // NOTE: this should only be for remove and place modes, and the proper button listeners need to be set.
         {
-            if (_runtimeConfirmPlacementUi != null)
-                return;
+            //if (_runtimeConfirmPlacementUi != null)
+            //    return;
 
-            GameObject obj = UnityEngine.Object.Instantiate(_confirmPlacementPrefab, _uiParentTransform);
-            MapEditCancelConfirm ui = obj.GetComponent<MapEditCancelConfirm>();
+            //GameObject obj = UnityEngine.Object.Instantiate(_confirmPlacementPrefab, _uiParentTransform);
+            //MapEditCancelConfirm ui = obj.GetComponent<MapEditCancelConfirm>();
 
             if (editModes.IsPlacementOn())
             {
-                ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
-                ui.confirmBtn.onClick.AddListener(ConfirmTilePlacement);
+                //ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
+                //ui.confirmBtn.onClick.AddListener(ConfirmTilePlacement);
+
+                mapEditorUI.LoadConfirmCancelUI(ClearConfirmedPositions, ConfirmTilePlacement);
             }
             else if (editModes.IsRemoveOn())
             {
-                ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
-                ui.confirmBtn.onClick.AddListener(RmvConfirmedPosFromActiveMap);
+                //ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
+                //ui.confirmBtn.onClick.AddListener(RmvConfirmedPosFromActiveMap);
+
+                mapEditorUI.LoadConfirmCancelUI(ClearConfirmedPositions, RmvConfirmedPosFromActiveMap);
             }
 
 
-            _runtimeConfirmPlacementUi = obj;
-            _listRuntimeUi.Add(obj);
+            //_runtimeConfirmPlacementUi = obj;
+            //_listRuntimeUi.Add(obj);
         }
 
         /// <summary>
@@ -639,17 +640,18 @@ namespace StorytellersTable.Campaign.Modes
             if (confirmedPosVisuals.Count() > 0)
                 return;
 
-            DestroyConfirmUi();
+            //DestroyConfirmUi();
+            mapEditorUI.DestroyConfirmCancelUI();
         }
 
         /// <summary>
         /// Destory's the runtime ui `_runtimeConfirmPlacementUi`.
         /// </summary>
-        private void DestroyConfirmUi()
-        {
-            UnityEngine.Object.Destroy(_runtimeConfirmPlacementUi);
-            _runtimeConfirmPlacementUi = null;
-        }
+        //private void DestroyConfirmUi()
+        //{
+        //    UnityEngine.Object.Destroy(_runtimeConfirmPlacementUi);
+        //    _runtimeConfirmPlacementUi = null;
+        //}
 
         #endregion
 

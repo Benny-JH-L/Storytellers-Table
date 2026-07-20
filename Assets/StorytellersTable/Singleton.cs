@@ -22,9 +22,9 @@ public class Singleton : MonoBehaviour
     [SerializeField] public Transform mainCanvas;
 
     [Header("Map Editor Prefabs")]
-    public GameObject CancelConfirmBtn; // gonna need a class for btns.. --> tmp
     public GameObject mapEditorUIPrefab;
-    [SerializeField] public GameObject selectionButtonGrpPrefab;    // prefab for selecting single, radiual, draw, area
+    
+    public GameObject CancelConfirmBtn; // gonna need a class for btns.. --> tmp
 
     private void Awake()
     {

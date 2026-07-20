@@ -17,6 +17,8 @@ namespace StorytellersTable.UiLogic
         public override void Configure()
         {
             DebugOut.Log(this, "Configure()");
+
+            // Configure the normal, highlight, pressed, select, .., colors, fade duration etc.
         }
 
         public override void Setup()
