@@ -14,6 +14,7 @@ namespace StorytellersTable.Campaign.Modes
     /// Tile editing of the active map.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-500)]
     public class TileEditContainer : MonoBehaviour
     {
         public static TileEditContainer instance;

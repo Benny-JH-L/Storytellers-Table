@@ -74,7 +74,7 @@ namespace StorytellersTable.Campaign.Modes
         public string placementMaterialName = String.Empty;
         public static int height_placement = 1;   // for placement mode
 
-        private TileEditContainer tileEditMode;
+        private TileEditContainer TileEditMode => TileEditContainer.instance;
 
         public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
         {
@@ -98,8 +98,6 @@ namespace StorytellersTable.Campaign.Modes
             selectOn = true;
 
             placementMaterialName = MaterialLoader.instance.defaultMaterialName;
-
-            tileEditMode = TileEditContainer.instance;
 
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
@@ -135,7 +133,7 @@ namespace StorytellersTable.Campaign.Modes
 
             // Enable Edit mode by default
             _editModes.ToggleEdit();
-            tileEditMode.Activate();
+            TileEditMode.Activate();
 
             _inputMap.Enable();
         }
@@ -224,8 +222,8 @@ namespace StorytellersTable.Campaign.Modes
                 HandleDeselectState();
 
             // Update values for tile editing mode
-            if (tileEditMode.IsActive)
-                tileEditMode.SetValues(confirmedHexCoords.ToHashSet());
+            if (TileEditMode.IsActive)
+                TileEditMode.SetValues(confirmedHexCoords.ToHashSet());
 
             // Update confirmed tiles
             if (Mouse.current.leftButton.wasPressedThisFrame)
@@ -557,7 +555,7 @@ namespace StorytellersTable.Campaign.Modes
                 return;
 
             // no longer in EditMode, disable it
-            tileEditMode.Disable();
+            TileEditMode.Disable();
 
             ClearConfirmedPositions();
         }
@@ -567,7 +565,7 @@ namespace StorytellersTable.Campaign.Modes
             if (_editModes.IsEditOn())
                 return;
 
-            tileEditMode.Activate();
+            TileEditMode.Activate();
 
             // if the mode is not set to edit already, we need to clear the coordinate selection
             ClearConfirmedPositions();
