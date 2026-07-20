@@ -17,6 +17,7 @@ namespace StorytellersTable.Campaign.Modes
     /// <summary>
     /// Encapsulates behavior while modifying the map tiles; layout coordinates, layered tile placement, and geometry.
     /// </summary>
+    [DisallowMultipleComponent]
     public class MapEditorContainer : MonoBehaviour, ICampaignMode
     {
         #region private classes
@@ -37,6 +38,8 @@ namespace StorytellersTable.Campaign.Modes
         }
 
         #endregion
+
+        public static MapEditorContainer instance;
 
         // Raycast to this layer to place tiles
         public static LayerMask mapEditLayerMask;
@@ -61,10 +64,12 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private MapTileRenderer ghostMapRenderer;       // used by placement mode, contains ghost tiles, they do not exist in the map data.
 
         private readonly AreaEditData areaEditData = new AreaEditData();
-        private readonly ModeContainer _editModes = new ModeContainer();
+        public readonly ModeContainer editModes = new ModeContainer();
         private bool selectOn = true;  // selection/deselction state
 
         // UI
+        [SerializeField] MapEditorUI mapEditorUI;
+
         private GameObject _confirmPlacementPrefab;    // ui
 
         [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
@@ -79,17 +84,29 @@ namespace StorytellersTable.Campaign.Modes
 
         private void Awake()
         {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            
+            instance = this;
+
             mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
             _inputMap = new MapEditAction();
-        }
-
-        private void OnEnable()
-        {
-            _confirmPlacementPrefab = Singleton.Instance.CancelConfirmBtn;
 
             _runtimeUiInstance = null;
             _runtimeConfirmPlacementUi = null;
             _listRuntimeUi = new List<GameObject>();
+        }
+
+        private void OnEnable()
+        {
+            // Create the MapEditors UI
+            Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas);
+            mapEditorUI = MapEditorUI.instance;
+
+            _confirmPlacementPrefab = Singleton.Instance.CancelConfirmBtn;
 
             confirmedPosVisuals = new GameObject("MapEdit - Confirmed_Pos_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
             confirmedPosVisuals.transform.SetParent(CampaignModeManager.Instance.transform, true);
@@ -98,24 +115,24 @@ namespace StorytellersTable.Campaign.Modes
             ghostMapRenderer.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
             // Add callback to toggle radial, area, and draw tile placements
-            _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
-            _inputMap.Selection.ToggleRadial.performed += _editModes.ToggleRadialSelect;
-            _inputMap.Selection.ToggleArea.performed += _editModes.ToggleAreaSelect;
-            _inputMap.Selection.ToggleDraw.performed += _editModes.ToggleDrawSelect;
+            _inputMap.Selection.ToggleSingle.performed += editModes.ToggleSingleSelect;
+            _inputMap.Selection.ToggleRadial.performed += editModes.ToggleRadialSelect;
+            _inputMap.Selection.ToggleArea.performed += editModes.ToggleAreaSelect;
+            _inputMap.Selection.ToggleDraw.performed += editModes.ToggleDrawSelect;
             _inputMap.Selection.ToggleDeselect.performed += ToggleSelect;
             _inputMap.Selection.ClearSelection.performed += ClearConfirmedPositions;
 
             // Add callbacks to toggle between tile/label edit, remove, and placement
-            _inputMap.Edit.ToggleTileMode.performed += _editModes.ToggleTileMode;
+            _inputMap.Edit.ToggleTileMode.performed += editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedPositions;
 
             _inputMap.Edit.ToggleEdit.performed += ToggleEditMode;
-            _inputMap.Edit.ToggleEdit.performed += _editModes.ToggleEdit;
+            _inputMap.Edit.ToggleEdit.performed += editModes.ToggleEdit;
 
-            _inputMap.Edit.TogglePlace.performed += _editModes.TogglePlace;
+            _inputMap.Edit.TogglePlace.performed += editModes.TogglePlace;
             _inputMap.Edit.TogglePlace.performed += EditModeChanged;
 
-            _inputMap.Edit.ToggleRemove.performed += _editModes.ToggleRemove;
+            _inputMap.Edit.ToggleRemove.performed += editModes.ToggleRemove;
             _inputMap.Edit.ToggleRemove.performed += EditModeChanged;
             // other call backs to input map...
         }
@@ -130,7 +147,7 @@ namespace StorytellersTable.Campaign.Modes
             //}
 
             // Enable Edit mode by default
-            _editModes.ToggleEdit();
+            editModes.ToggleEdit();
             TileEditMode.Activate();
 
             _inputMap.Enable();
@@ -195,17 +212,17 @@ namespace StorytellersTable.Campaign.Modes
 
             // Calculate unconfirmed positions for settings: Radial, Area, and Draw.
             // Radial
-            if (_editModes.SelectionMode == SelectModeTypes.radialSelect)
+            if (editModes.SelectionMode == SelectModeTypes.radialSelect)
             {
                 HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, unconfirmedHexCoords);
             }
             // Area
-            else if (_editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
+            else if (editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
             {
                 HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
             }
             // Draw (for radius)
-            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect)
+            else if (editModes.SelectionMode == SelectModeTypes.drawSelect)
             {
                 HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius - 1, unconfirmedHexCoords);    // offset draw radius by 1, so draw radius of 1 means single tile, 2 means 1 tiles from the center.
             }
@@ -227,7 +244,7 @@ namespace StorytellersTable.Campaign.Modes
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 // Area mode check
-                if (_editModes.SelectionMode == SelectModeTypes.areaSelect)
+                if (editModes.SelectionMode == SelectModeTypes.areaSelect)
                 {
                     // Set the starting position
                     if (!areaEditData.startDefined)
@@ -251,7 +268,7 @@ namespace StorytellersTable.Campaign.Modes
                 }
             }
             // Update confirmed tiles for draw selection
-            else if (_editModes.SelectionMode == SelectModeTypes.drawSelect && Mouse.current.leftButton.isPressed)
+            else if (editModes.SelectionMode == SelectModeTypes.drawSelect && Mouse.current.leftButton.isPressed)
                 UpdateConfirmedTiles();
         }
 
@@ -272,7 +289,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // Remove duplicate hex positions from unconfirmedHexCoords that exist on the map already (ie are placed tiles), for placement mode
-            if (_editModes.IsTilePlaceOn())
+            if (editModes.IsTilePlaceOn())
             {
                 foreach (var pair in ActiveMap.tileDatas)
                 {
@@ -280,12 +297,12 @@ namespace StorytellersTable.Campaign.Modes
                         unconfirmedHexCoords.Remove(pair.Key);
                 }
             }
-            else if (_editModes.IsLabelPlaceOn())
+            else if (editModes.IsLabelPlaceOn())
             {
                 // logic...
             }
             // Remove hex positiosn from unconfirmedHexCoords that DO NOT EXIST on the map, FOR TILE removal/edit mode
-            else if (_editModes.IsTileRmvOn() || _editModes.IsTileEditOn())
+            else if (editModes.IsTileRmvOn() || editModes.IsTileEditOn())
             {
                 List<HexCoord> filtered = new();
                 foreach (var pair in ActiveMap.tileDatas)
@@ -298,14 +315,14 @@ namespace StorytellersTable.Campaign.Modes
                 unconfirmedHexCoords.AddRange(filtered);
             }
             // Remove hex positiosn from unconfirmedHexCoords that DO NOT EXIST on the map, FOR LABEL removal/edit mode
-            else if (_editModes.IsTLabelRmvOn() || _editModes.IsLabelEditOn())
+            else if (editModes.IsTLabelRmvOn() || editModes.IsLabelEditOn())
             {
                 // logic...
             }
 
             // Set visuals for unconfirmed tiles
             // Placement mode, create ghost visual for unconfirmed tiles 
-            if (_editModes.IsPlacementOn())
+            if (editModes.IsPlacementOn())
             {
                 ghostMapRenderer.AddHexTileVisual(unconfirmedHexCoords, placementMaterialName, height_placement);
                 ghostMapRenderer.EnableGhostVisual(unconfirmedHexCoords, true);
@@ -326,7 +343,7 @@ namespace StorytellersTable.Campaign.Modes
         private void HandleDeselectState()
         {
             // Placement mode, highlight hex coords to deselect (ie remove from confirmed list)
-            if (_editModes.IsTilePlaceOn())
+            if (editModes.IsTilePlaceOn())
             {
                 // Disable highlight of tiles not in the unconfirmed list
                 confirmedPosVisuals.DisableAllHighlightsExcept(unconfirmedHexCoords.ToHashSet());
@@ -370,7 +387,7 @@ namespace StorytellersTable.Campaign.Modes
             if (selectOn) // Select
             {
                 // In PlacementMode, create new confirmed visuals from ghostMapRenderer
-                if (_editModes.IsPlacementOn())
+                if (editModes.IsPlacementOn())
                 {
                     foreach ((HexCoord coord, HexRenderer hexRenderer) in ghostMapRenderer.GetVisualData())
                     {
@@ -389,7 +406,7 @@ namespace StorytellersTable.Campaign.Modes
             else // Deselect
             {
                 // Placement mode, remove visual at hex coords from unconfirmed list
-                if (_editModes.IsPlacementOn())
+                if (editModes.IsPlacementOn())
                 {
                     confirmedPosVisuals.RemoveVisual(unconfirmedHexCoords);
                 }
@@ -413,7 +430,7 @@ namespace StorytellersTable.Campaign.Modes
             if (confirmedHexCoords.Count > 0)
             {
                 // load confimation ui for placement/removal modes
-                if (_editModes.IsPlacementOn() || _editModes.IsRemoveOn())
+                if (editModes.IsPlacementOn() || editModes.IsRemoveOn())
                     LoadConfirmCancelUi();
                 // load Ui for tile / label editing
                 else
@@ -543,13 +560,13 @@ namespace StorytellersTable.Campaign.Modes
 
         private void EditModeChanged(InputAction.CallbackContext context)
         {
-            Stack<EditModeTypes> history = _editModes.GetEditModeHistory();
+            Stack<EditModeTypes> history = editModes.GetEditModeHistory();
             history.Reverse();
             history.Pop(); // gets the current mode
             EditModeTypes previousMode = history.Pop();
 
             // Check if the Edit was enabled before.
-            if (previousMode == _editModes.EditMode && _editModes.IsEditOn())
+            if (previousMode == editModes.EditMode && editModes.IsEditOn())
                 return;
 
             // no longer in EditMode, disable it
@@ -560,7 +577,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private void ToggleEditMode(InputAction.CallbackContext context)
         {
-            if (_editModes.IsEditOn())
+            if (editModes.IsEditOn())
                 return;
 
             TileEditMode.Activate();
@@ -597,12 +614,12 @@ namespace StorytellersTable.Campaign.Modes
             GameObject obj = UnityEngine.Object.Instantiate(_confirmPlacementPrefab, _uiParentTransform);
             MapEditCancelConfirm ui = obj.GetComponent<MapEditCancelConfirm>();
 
-            if (_editModes.IsPlacementOn())
+            if (editModes.IsPlacementOn())
             {
                 ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
                 ui.confirmBtn.onClick.AddListener(ConfirmTilePlacement);
             }
-            else if (_editModes.IsRemoveOn())
+            else if (editModes.IsRemoveOn())
             {
                 ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
                 ui.confirmBtn.onClick.AddListener(RmvConfirmedPosFromActiveMap);
