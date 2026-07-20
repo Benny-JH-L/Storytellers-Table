@@ -6,8 +6,8 @@ namespace StorytellersTable.Campaign.Modes
     /// </summary>
     public enum CampaignModeType
     {
-        MapEdit,
-        EntityEdit,
+        MapEditor,
+        EntityEditor,
         Play
     }
 }

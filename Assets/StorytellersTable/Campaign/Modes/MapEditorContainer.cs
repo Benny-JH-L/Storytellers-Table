@@ -17,7 +17,7 @@ namespace StorytellersTable.Campaign.Modes
     /// <summary>
     /// Encapsulates behavior while modifying the map tiles; layout coordinates, layered tile placement, and geometry.
     /// </summary>
-    public class MapEditMode : ICampaignMode
+    public class MapEditorContainer : MonoBehaviour, ICampaignMode
     {
         #region private classes
 
@@ -39,18 +39,12 @@ namespace StorytellersTable.Campaign.Modes
         #endregion
 
         // Raycast to this layer to place tiles
-        public static LayerMask mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
+        public static LayerMask mapEditLayerMask;
         public static float raycastMaxDistance = 500f;
 
-        private readonly GameObject _uiPrefab;
-        private readonly Transform _uiParentTransform;
-        private readonly MapEditAction _inputMap;
-
-        private readonly GameObject _confirmPlacementPrefab;    // ui
-
-        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
-        [SerializeField] private GameObject _runtimeConfirmPlacementUi;
-        [SerializeField] private List<GameObject> _listRuntimeUi;   // list of runtime Ui
+        //private readonly GameObject _uiPrefab;
+        private Transform _uiParentTransform => Singleton.Instance.mainCanvas;
+        [SerializeField] private MapEditAction _inputMap;
 
         private MapData ActiveMap => MapManager.Instance.ActiveMapData;
         private CampaignModeManager ModeManager => CampaignModeManager.Instance;
@@ -66,22 +60,32 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] private MapTileRenderer confirmedPosVisuals;    // used by placement mode, contains tiles to potentially place, they do not exist in the map data yet.
         [SerializeField] private MapTileRenderer ghostMapRenderer;       // used by placement mode, contains ghost tiles, they do not exist in the map data.
 
-        private readonly AreaEditData areaEditData;
-        private readonly ModeContainer _editModes;
-        private bool selectOn;  // selection/deselction state
+        private readonly AreaEditData areaEditData = new AreaEditData();
+        private readonly ModeContainer _editModes = new ModeContainer();
+        private bool selectOn = true;  // selection/deselction state
+
+        // UI
+        private GameObject _confirmPlacementPrefab;    // ui
+
+        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
+        [SerializeField] private GameObject _runtimeConfirmPlacementUi;
+        [SerializeField] private List<GameObject> _listRuntimeUi;   // list of runtime Ui
 
         // values edit by the UI
-        public string placementMaterialName = String.Empty;
+        public string placementMaterialName  = MaterialLoader.instance.defaultMaterialName;
         public static int height_placement = 1;   // for placement mode
 
         private TileEditContainer TileEditMode => TileEditContainer.instance;
 
-        public MapEditMode(GameObject uiPrefab, Transform uiParent, MapEditAction inputMap)
+        private void Awake()
         {
-            _uiPrefab = uiPrefab;
-            _uiParentTransform = uiParent;
-            _inputMap = inputMap;
-            _confirmPlacementPrefab = Resources.Load<GameObject>("UI/MapEdit/CancelConfirmBtn");
+            mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
+            _inputMap = new MapEditAction();
+        }
+
+        private void OnEnable()
+        {
+            _confirmPlacementPrefab = Singleton.Instance.CancelConfirmBtn;
 
             _runtimeUiInstance = null;
             _runtimeConfirmPlacementUi = null;
@@ -92,12 +96,6 @@ namespace StorytellersTable.Campaign.Modes
 
             ghostMapRenderer = new GameObject("MapEdit - Ghost_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
             ghostMapRenderer.transform.SetParent(CampaignModeManager.Instance.transform, true);
-
-            areaEditData = new AreaEditData();
-            _editModes = new ModeContainer();
-            selectOn = true;
-
-            placementMaterialName = MaterialLoader.instance.defaultMaterialName;
 
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += _editModes.ToggleSingleSelect;
@@ -124,12 +122,12 @@ namespace StorytellersTable.Campaign.Modes
 
         void ICampaignMode.Enter()
         {
-            // Instantiate UI if it does not exist
-            if (_uiPrefab != null && _runtimeUiInstance == null)
-            {
-                _runtimeUiInstance = UnityEngine.Object.Instantiate(_uiPrefab, _uiParentTransform);
-                _listRuntimeUi.Add(_runtimeUiInstance);
-            }
+            // Instantiate UI class if it does not exist
+            //if (_uiPrefab != null && _runtimeUiInstance == null)
+            //{
+            //    _runtimeUiInstance = UnityEngine.Object.Instantiate(_uiPrefab, _uiParentTransform);
+            //    _listRuntimeUi.Add(_runtimeUiInstance);
+            //}
 
             // Enable Edit mode by default
             _editModes.ToggleEdit();
@@ -676,7 +674,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             sw.Stop();  // stop timer
-            DebugOut.Log(typeof(MapEditMode), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
+            DebugOut.Log(typeof(MapEditorContainer), $"LayoutMap() - elapsed time: {sw.Elapsed.TotalSeconds} seconds.");
         }
 
         #endregion

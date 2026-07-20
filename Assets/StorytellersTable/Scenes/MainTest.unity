@@ -911,6 +911,7 @@ MonoBehaviour:
   outerSize: 2
   isFlatTopped: 0
   mainCanvas: {fileID: 1403335829}
+  CancelConfirmBtn: {fileID: 4936444386070779302, guid: 7a325b1615ca0b840ab1a5a8bc5008f7, type: 3}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0

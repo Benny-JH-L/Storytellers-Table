@@ -20,11 +20,11 @@ public class CampaignModeManagerEditor : Editor
         }
         if (GUILayout.Button("Swith to Map Edit mode"))
         {
-            manager.SwitchMode(CampaignModeType.MapEdit);
+            manager.SwitchMode(CampaignModeType.MapEditor);
         }
         if (GUILayout.Button("Swith to Entity Edit mode"))
         {
-            manager.SwitchMode(CampaignModeType.EntityEdit);
+            manager.SwitchMode(CampaignModeType.EntityEditor);
         }
     }
 }

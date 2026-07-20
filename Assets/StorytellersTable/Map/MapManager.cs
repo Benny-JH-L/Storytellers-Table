@@ -123,7 +123,7 @@ namespace StorytellersTable.Map
             _loadedMapsCache.Add(targetMapId, newMap);
 
             // Generate generic layout
-            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
+            StorytellersTable.Campaign.Modes.MapEditorContainer.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
             DebugOut.Log(this, $"Generating a new map with id[{targetMapId}], type[{newMap.GetType()}]");
         }
 
@@ -241,7 +241,7 @@ namespace StorytellersTable.Map
         public void RebuildMap()
         {
             Debug.Log($"Re building map of size q={defaultMapSize.x}, r={defaultMapSize.y}...");
-            StorytellersTable.Campaign.Modes.MapEditMode.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
+            StorytellersTable.Campaign.Modes.MapEditorContainer.LayoutMap(this, defaultMapSize, MaterialLoader.instance.GetDefaultMaterial());
         }
 
         [ContextMenu("Re Draw Hex Tile Mesh")] // In the Unity inspector, right click the map script, and select this 

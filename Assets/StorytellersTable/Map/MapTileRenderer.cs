@@ -25,7 +25,7 @@ namespace StorytellersTable.Renderer
                 return;
 
             Material material = MaterialLoader.instance.GetMaterial(materialName);
-            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditMode.GenerateHexRenderer(hexCoord, material, height);
+            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditorContainer.GenerateHexRenderer(hexCoord, material, height);
             hexRenderer.transform.SetParent(this.transform, true);    // parent it
 
             if (shader != null)

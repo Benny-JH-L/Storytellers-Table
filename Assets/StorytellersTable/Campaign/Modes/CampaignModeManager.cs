@@ -25,7 +25,6 @@ namespace StorytellersTable.Campaign.Modes
 
         [Header("Action Inputs")]
         [SerializeField] private PlayAction _playActions;
-        [SerializeField] private MapEditAction _mapEditActions;
         [SerializeField] private EntityEditAction _entityEditActions;
         [SerializeField] private ModeManagerAction _modeManagerActions;
 
@@ -52,7 +51,6 @@ namespace StorytellersTable.Campaign.Modes
             _uiCanvasRoot = Singleton.Instance.mainCanvas.transform;
 
             _playActions = new PlayAction();
-            _mapEditActions = new MapEditAction();
             _entityEditActions = new EntityEditAction();
             _modeManagerActions = new ModeManagerAction();
 
@@ -63,7 +61,7 @@ namespace StorytellersTable.Campaign.Modes
 
         private void OnEnable()
         {
-            SwitchMode(CampaignModeType.MapEdit); // set to play when its implemented
+            SwitchMode(CampaignModeType.MapEditor); // set to play when its implemented
             _modeManagerActions.Enable();
         }
 
@@ -106,11 +104,7 @@ namespace StorytellersTable.Campaign.Modes
             _modes = new Dictionary<CampaignModeType, ICampaignMode>
             {
                 {
-                    CampaignModeType.MapEdit,
-                    new MapEditMode(_mapEditUiPrefab, _uiCanvasRoot, _mapEditActions)
-                },
-                {
-                    CampaignModeType.EntityEdit,
+                    CampaignModeType.EntityEditor,
                     new EntityEditMode(_entityEditUiPrefab, _uiCanvasRoot, _entityEditActions)
                 },
                 {
@@ -118,6 +112,10 @@ namespace StorytellersTable.Campaign.Modes
                     new PlayMode(_playUiPrefab, _uiCanvasRoot, _playActions)
                 }
             };
+
+            MapEditorContainer obj = new GameObject("Map_Editor_Container", typeof(MapEditorContainer)).GetComponent<MapEditorContainer>();
+            obj.transform.SetParent(this.transform, true);
+            _modes.Add(CampaignModeType.MapEditor, obj);
         }
 
         private void ValidateDependencies()
@@ -146,12 +144,12 @@ namespace StorytellersTable.Campaign.Modes
             switch (CurrentModeType)
             {
                 case CampaignModeType.Play:
-                    SwitchMode(CampaignModeType.MapEdit);
+                    SwitchMode(CampaignModeType.MapEditor);
                     break;
-                case CampaignModeType.MapEdit:
-                    SwitchMode(CampaignModeType.EntityEdit);
+                case CampaignModeType.MapEditor:
+                    SwitchMode(CampaignModeType.EntityEditor);
                     break;
-                case CampaignModeType.EntityEdit:
+                case CampaignModeType.EntityEditor:
                     SwitchMode(CampaignModeType.Play);
                     break;
             }

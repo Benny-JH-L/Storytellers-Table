@@ -21,6 +21,9 @@ public class Singleton : MonoBehaviour
     [Header("UI")]
     [SerializeField] public Transform mainCanvas;
 
+    [Header("Map Editor Prefabs")]
+    public GameObject CancelConfirmBtn; // gonna need a class for btns..
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
