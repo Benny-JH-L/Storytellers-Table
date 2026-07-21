@@ -18,7 +18,7 @@ namespace StorytellersTable.Campaign.Modes
         [Header("UI Canvas Hierarchy Configurations")]
         [SerializeField] private Transform _uiCanvasRoot;   // needs to be a `Canvas` instance
 
-        [Header("Mode Specific UI Prefabs")]
+        [Header("Mode Specific UI Prefabs")] // to be removed
         [SerializeField] private GameObject _mapEditUiPrefab;
         [SerializeField] private GameObject _entityEditUiPrefab;
         [SerializeField] private GameObject _playUiPrefab;
