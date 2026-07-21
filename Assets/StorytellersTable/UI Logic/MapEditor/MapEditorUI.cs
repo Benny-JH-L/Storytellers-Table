@@ -24,6 +24,7 @@ namespace StorytellersTable.UiLogic
         [Header("Other")]
         private GameObject _confirmPlacementPrefab => Singleton.Instance.CancelConfirmBtn; // two buttons, 1 cancels, 1 confirms --> need to define an actual class for it
         private MapEditCancelConfirm confirmPlacementRuntime;
+        // label to display "Map Editor - <selection mode> - <place/rmv/edit> - <tile/label>"
 
         public override void Setup()
         {

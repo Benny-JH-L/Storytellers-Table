@@ -70,11 +70,6 @@ namespace StorytellersTable.Campaign.Modes
         // UI
         [SerializeField] MapEditorUI mapEditorUI;
 
-
-        [SerializeField] private GameObject _runtimeUiInstance; // UI for the map edit mode, instantiated from `_uiprefab`
-        [SerializeField] private GameObject _runtimeConfirmPlacementUi;
-        [SerializeField] private List<GameObject> _listRuntimeUi;   // list of runtime Ui
-
         // values edit by the UI
         public string placementMaterialName  = MaterialLoader.instance.defaultMaterialName;
         public static int height_placement = 1;   // for placement mode
@@ -93,18 +88,10 @@ namespace StorytellersTable.Campaign.Modes
 
             mapEditLayerMask = LayerMask.GetMask("MapEditPlane");
             _inputMap = new MapEditAction();
-
-            _runtimeUiInstance = null;
-            _runtimeConfirmPlacementUi = null;
-            _listRuntimeUi = new List<GameObject>();
         }
 
         private void OnEnable()
         {
-            // Create the MapEditors UI
-            Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas);
-            mapEditorUI = MapEditorUI.instance;
-
             confirmedPosVisuals = new GameObject("MapEdit - Confirmed_Pos_Visuals", typeof(MapTileRenderer)).GetComponent<MapTileRenderer>();
             confirmedPosVisuals.transform.SetParent(CampaignModeManager.Instance.transform, true);
 
@@ -136,12 +123,9 @@ namespace StorytellersTable.Campaign.Modes
 
         void ICampaignMode.Enter()
         {
-            // Instantiate UI class if it does not exist
-            //if (_uiPrefab != null && _runtimeUiInstance == null)
-            //{
-            //    _runtimeUiInstance = UnityEngine.Object.Instantiate(_uiPrefab, _uiParentTransform);
-            //    _listRuntimeUi.Add(_runtimeUiInstance);
-            //}
+            // Create the MapEditors UI
+            mapEditorUI = Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas).GetComponent<MapEditorUI>();
+            // Note: the constant destruction and creation can lag down the game once the UI becomes much more developed
 
             // Enable Edit mode by default
             editModes.ToggleEdit();
@@ -154,13 +138,10 @@ namespace StorytellersTable.Campaign.Modes
         {
             _inputMap.Disable();    // disable input for this mode
 
-            // clean up all runtime Ui
-            foreach (GameObject obj in _listRuntimeUi)
-                UnityEngine.Object.Destroy(obj);
+            TileEditMode.Disable();
 
-            _runtimeUiInstance = null;
-            _runtimeConfirmPlacementUi = null;
-            _listRuntimeUi.Clear();
+            // Note: the constant destruction and creation can lag down the game once the UI becomes much more developed
+            Destroy(mapEditorUI.gameObject);
 
             // Clean up tiles visuals
             ClearUnconfirmedTiles();
@@ -600,39 +581,23 @@ namespace StorytellersTable.Campaign.Modes
         #region UI backend
 
         /// <summary>
-        /// Instantiates a gameobject from the prefab, `_confirmPlacementPrefab`, only one may exist.
+        /// Loads the "Cancel" or "Confirm" UI, and assigns the proper button listeners.
         /// SHOULD ONLY CALLED FOR PLACEMENT/REMOVAL MODES.
         /// </summary>
         private void LoadConfirmCancelUi() // NOTE: this should only be for remove and place modes, and the proper button listeners need to be set.
         {
-            //if (_runtimeConfirmPlacementUi != null)
-            //    return;
-
-            //GameObject obj = UnityEngine.Object.Instantiate(_confirmPlacementPrefab, _uiParentTransform);
-            //MapEditCancelConfirm ui = obj.GetComponent<MapEditCancelConfirm>();
-
             if (editModes.IsPlacementOn())
             {
-                //ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
-                //ui.confirmBtn.onClick.AddListener(ConfirmTilePlacement);
-
                 mapEditorUI.LoadConfirmCancelUI(ClearConfirmedPositions, ConfirmTilePlacement);
             }
             else if (editModes.IsRemoveOn())
             {
-                //ui.cancelBtn.onClick.AddListener(ClearConfirmedPositions);
-                //ui.confirmBtn.onClick.AddListener(RmvConfirmedPosFromActiveMap);
-
                 mapEditorUI.LoadConfirmCancelUI(ClearConfirmedPositions, RmvConfirmedPosFromActiveMap);
             }
-
-
-            //_runtimeConfirmPlacementUi = obj;
-            //_listRuntimeUi.Add(obj);
         }
 
         /// <summary>
-        /// Checks whether or not `_confirmedTilePos` count is > 0 to destory the runtime ui `_runtimeConfirmPlacementUi`.
+        /// Checks whether or not `_confirmedTilePos` count is > 0 to destory the "Cancel" or "Confirm" UI.
         /// </summary>
         private void CheckToDestoryConfirmUi()
         {
@@ -640,19 +605,8 @@ namespace StorytellersTable.Campaign.Modes
             if (confirmedPosVisuals.Count() > 0)
                 return;
 
-            //DestroyConfirmUi();
             mapEditorUI.DestroyConfirmCancelUI();
         }
-
-        /// <summary>
-        /// Destory's the runtime ui `_runtimeConfirmPlacementUi`.
-        /// </summary>
-        //private void DestroyConfirmUi()
-        //{
-        //    UnityEngine.Object.Destroy(_runtimeConfirmPlacementUi);
-        //    _runtimeConfirmPlacementUi = null;
-        //}
-
         #endregion
 
         #region misc: LayoutMap()
