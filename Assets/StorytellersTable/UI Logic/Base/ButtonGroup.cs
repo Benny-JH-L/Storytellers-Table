@@ -10,15 +10,7 @@ namespace StorytellersTable.UiLogic
     {
         // Stores buttons in the button group using an identifier
         public readonly Dictionary<string, ST_Button> buttons = new();
+        // scriptahble object to configure font and what not
 
-        public override void Configure()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override void Setup()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }

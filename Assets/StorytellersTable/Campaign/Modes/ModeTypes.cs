@@ -38,6 +38,10 @@ namespace StorytellersTable.Campaign.Modes
     public class ModeContainer
     {
         public SelectModeTypes SelectionMode { get; private set; }
+
+        /// <summary>
+        /// The current chosen editing mode, placement, removal, or edit.
+        /// </summary>
         public EditModeTypes EditMode { get; private set; }
 
         // True: tile mode. False: label mode
@@ -117,6 +121,7 @@ namespace StorytellersTable.Campaign.Modes
 
             editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Edit enabled.");
+            MapEditorContainer.instance.EditModeChanged();
         }
 
         public void TogglePlace(InputAction.CallbackContext context)
@@ -152,6 +157,7 @@ namespace StorytellersTable.Campaign.Modes
 
             editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Place enabled.");
+            MapEditorContainer.instance.EditModeChanged();
         }
 
         public void ToggleRemove(InputAction.CallbackContext context)
@@ -187,6 +193,7 @@ namespace StorytellersTable.Campaign.Modes
 
             editModeHistory.Push(EditMode);
             DebugOut.Log(this, $"Remove enabled.");
+            MapEditorContainer.instance.EditModeChanged();
         }
         #endregion
 
@@ -286,6 +293,12 @@ namespace StorytellersTable.Campaign.Modes
         #endregion
 
         #region public utility
+
+        public bool IsTileModeOn()
+        {
+            return tileModeOn;
+        }
+
         public bool IsTilePlaceOn()
         {
             return EditMode == EditModeTypes.tilePlace;
@@ -315,7 +328,7 @@ namespace StorytellersTable.Campaign.Modes
             return EditMode == EditModeTypes.labelRemove;
         }
 
-        public bool IsEditOn()
+        public bool IsEditingOn()
         {
             return IsLabelEditOn() || IsTileEditOn();
         }
@@ -336,9 +349,19 @@ namespace StorytellersTable.Campaign.Modes
         /// <returns></returns>
         public Stack<EditModeTypes> GetEditModeHistory()
         {
-            Stack<EditModeTypes> history = new Stack<EditModeTypes>(editModeHistory);
-            history.Reverse();
+            Stack<EditModeTypes> history = new Stack<EditModeTypes>(editModeHistory.Reverse());
             return history;
+        }
+
+        public void PrintEditModeHistory()
+        {
+            Stack<EditModeTypes> history = GetEditModeHistory();
+            string s = "EditMode History | Top -> ";
+            while (history.Count > 0)
+            {
+                s += history.Pop() + ", ";
+            }
+            DebugOut.Log(this, s);
         }
         #endregion
     }

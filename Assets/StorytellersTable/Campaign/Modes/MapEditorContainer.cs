@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using UnityEditor.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -68,7 +69,7 @@ namespace StorytellersTable.Campaign.Modes
         private bool selectOn = true;  // selection/deselction state
 
         // UI
-        [SerializeField] MapEditorUI mapEditorUI;
+        [SerializeField] MapEditorUIManager mapEditorUI;
 
         // values edit by the UI
         public string placementMaterialName  = MaterialLoader.instance.defaultMaterialName;
@@ -110,21 +111,21 @@ namespace StorytellersTable.Campaign.Modes
             _inputMap.Edit.ToggleTileMode.performed += editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedPositions;
 
-            _inputMap.Edit.ToggleEdit.performed += ToggleEditMode;
             _inputMap.Edit.ToggleEdit.performed += editModes.ToggleEdit;
+            //_inputMap.Edit.ToggleEdit.performed += EditModeChanged;
 
             _inputMap.Edit.TogglePlace.performed += editModes.TogglePlace;
-            _inputMap.Edit.TogglePlace.performed += EditModeChanged;
+            //_inputMap.Edit.TogglePlace.performed += EditModeChanged;
 
             _inputMap.Edit.ToggleRemove.performed += editModes.ToggleRemove;
-            _inputMap.Edit.ToggleRemove.performed += EditModeChanged;
+            //_inputMap.Edit.ToggleRemove.performed += EditModeChanged;
             // other call backs to input map...
         }
 
         void ICampaignMode.Enter()
         {
             // Create the MapEditors UI
-            mapEditorUI = Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas).GetComponent<MapEditorUI>();
+            mapEditorUI = Instantiate(Singleton.Instance.mapEditorUIPrefab, Singleton.Instance.mainCanvas).GetComponent<MapEditorUIManager>();
             // Note: the constant destruction and creation can lag down the game once the UI becomes much more developed
 
             // Enable Edit mode by default
@@ -536,31 +537,42 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedPositions();
         }
 
-        private void EditModeChanged(InputAction.CallbackContext context)
+        /// <summary>
+        /// When the edit mode changes, this is called.
+        /// </summary>
+        /// <remarks>
+        /// Called by ModeContainer instances, whenever the mode is changed.
+        /// </remarks>
+        public void EditModeChanged()
         {
+            editModes.PrintEditModeHistory();
             Stack<EditModeTypes> history = editModes.GetEditModeHistory();
-            history.Reverse();
+
+            // Case, when it is initially one/no history
+            if (history.Count < 2)
+                return;
+
             history.Pop(); // gets the current mode
-            EditModeTypes previousMode = history.Pop();
+            EditModeTypes prevEditMode = history.Pop();
 
-            // Check if the Edit was enabled before.
-            if (previousMode == editModes.EditMode && editModes.IsEditOn())
+            DebugOut.Log(this, $"prevMode: {prevEditMode}, currMode: {editModes.EditMode}");
+
+            // Check if the Editing mode is enabled already
+            if (prevEditMode == editModes.EditMode && editModes.IsEditingOn())
                 return;
 
-            // no longer in EditMode, disable it
-            TileEditMode.Disable();
+            // Switch to editing mode if same mode is selected
+            if (prevEditMode == editModes.EditMode || editModes.IsEditingOn())
+            {
+                TileEditMode.Activate();
+            }
+            // No longer in EditMode, disable it
+            else
+            {
+                TileEditMode.Disable();
+            }
 
-            ClearConfirmedPositions();
-        }
-
-        private void ToggleEditMode(InputAction.CallbackContext context)
-        {
-            if (editModes.IsEditOn())
-                return;
-
-            TileEditMode.Activate();
-
-            // if the mode is not set to edit already, we need to clear the coordinate selection
+            ClearUnconfirmedTiles();
             ClearConfirmedPositions();
         }
 

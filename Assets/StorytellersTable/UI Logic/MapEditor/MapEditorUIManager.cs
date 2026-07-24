@@ -9,17 +9,17 @@ namespace StorytellersTable.UiLogic
     /// Handles the UI for the Map editor.
     /// </summary>
     [DisallowMultipleComponent]
-    public class MapEditorUI : CustomUIComponent
+    public class MapEditorUIManager : CustomUIComponent
     {
-        public static MapEditorUI instance;
+        public static MapEditorUIManager instance;
 
         [Header("UI Area")] // A section of the screen they take up
         public RectTransform selectionButtonGrpArea;
 
         [Header("Button groups")]
         public SelectionButtonGroup selectionButtonGrp;   // selection mode: single, radial, draw, area
-                                                          // Modes: rmv, place, edit 
-                                                          // change to label or tile
+        public EditModeButtonGroup editModeButtonGroup;   // Modes: rmv, place, edit 
+        public TileLabelToggleButton tileLabelToggleButton;   // change to label or tile
 
         [Header("Other")]
         private GameObject _confirmPlacementPrefab => Singleton.Instance.CancelConfirmBtn; // two buttons, 1 cancels, 1 confirms --> need to define an actual class for it
@@ -38,8 +38,8 @@ namespace StorytellersTable.UiLogic
             instance.transform.SetParent(Singleton.Instance.mainCanvas, false);
 
             selectionButtonGrp = GetComponentInChildren<SelectionButtonGroup>();
-            // get rmv, place, edit
-            // get change to label or tile
+            editModeButtonGroup = GetComponentInChildren<EditModeButtonGroup>();
+            tileLabelToggleButton = GetComponentInChildren<TileLabelToggleButton>();
         }
 
         public override void Configure()
@@ -48,10 +48,21 @@ namespace StorytellersTable.UiLogic
 
             // Configure the selection buttons
             // Add listeners to switch selection modes
-            selectionButtonGrp.singleSelBtn.button.onClick.AddListener(mapEditor.editModes.ToggleSingleSelect);
-            selectionButtonGrp.areaSelBtn.button.onClick.AddListener(mapEditor.editModes.ToggleAreaSelect);
-            selectionButtonGrp.radialSelBtn.button.onClick.AddListener(mapEditor.editModes.ToggleRadialSelect);
-            selectionButtonGrp.drawSelBtn.button.onClick.AddListener(mapEditor.editModes.ToggleDrawSelect);
+            ModeContainer modeContainer = mapEditor.editModes;
+            selectionButtonGrp.singleSelBtn.button.onClick.AddListener(modeContainer.ToggleSingleSelect);
+            selectionButtonGrp.areaSelBtn.button.onClick.AddListener(modeContainer.ToggleAreaSelect);
+            selectionButtonGrp.radialSelBtn.button.onClick.AddListener(modeContainer.ToggleRadialSelect);
+            selectionButtonGrp.drawSelBtn.button.onClick.AddListener(modeContainer.ToggleDrawSelect);
+
+            // Add listeners to switch editing modes
+            editModeButtonGroup.removeBtn.button.onClick.AddListener(modeContainer.ToggleRemove);
+            editModeButtonGroup.placeBtn.button.onClick.AddListener(modeContainer.TogglePlace);
+            editModeButtonGroup.editBtn.button.onClick.AddListener(modeContainer.ToggleEdit);
+
+            // Add listeners to switch tile label mode
+            //tileLabelToggleButton.toggleButton.button.onClick.AddListener(modeContainer.ToggleTileMode);
+            //tileLabelToggleButton.toggleButton.button.onClick.AddListener(tileLabelToggleButton.UpdateAppearance);
+            tileLabelToggleButton.AddListener(modeContainer.ToggleTileMode);
         }
 
         /// <summary>
