@@ -16,6 +16,8 @@ public class Singleton : MonoBehaviour
     [Header("Hex Visual")]
     [SerializeField] public float innerSize = 0f;     // size of the inner hexagon (set to 0 for a normal solid hexagon)
     [SerializeField] public float outerSize = 1f;     // size of the outer hexagon
+    [Range(1, 5)]
+    [SerializeField] public int height = 1;
     [SerializeField] public bool isFlatTopped = false;
 
     [Header("UI")]

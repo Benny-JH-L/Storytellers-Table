@@ -21,23 +21,23 @@ namespace StorytellersTable
         /// <param name="center"></param>
         /// <param name="checkExists"></param>
         /// <returns></returns>
-        public static List<HexCoord> GetAdjacentHexCoords(MapData mapData, HexCoord center, bool checkExists = false)
-        {
-            // We can compute in O(1) time the adjacent hex tiles instead having to store them
-            List<HexCoord> result = new List<HexCoord>();
+        //public static List<HexCoord> GetAdjacentHexCoords(MapData mapData, HexCoord center, bool checkExists = false)
+        //{
+        //    // We can compute in O(1) time the adjacent hex tiles instead having to store them
+        //    List<HexCoord> result = new List<HexCoord>();
 
-            foreach (HexCoord offset in HexCoord.ADJACENT_TILE_OFFSETS)
-            {
-                // don't check if the tile exists on the map
-                if (!checkExists)
-                    result.Add(center + offset);
-                // check if the tile exists (not null) on the map
-                else if (checkExists && mapData.tileDatas.TryGetValue(center + offset, out TileData data))
-                    result.Add(center + offset);
-            }
+        //    foreach (HexCoord offset in HexCoord.ADJACENT_TILE_OFFSETS)
+        //    {
+        //        // don't check if the tile exists on the map
+        //        if (!checkExists)
+        //            result.Add(center + offset);
+        //        // check if the tile exists (not null) on the map
+        //        else if (checkExists && mapData.tileDatas.TryGetValue(center + offset, out TileData data)) // need to consider if they want to `fall through empty cells`
+        //            result.Add(center + offset);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         #region Ring & Area & Line coord calculations
 
@@ -53,7 +53,7 @@ namespace StorytellersTable
         /// <param name="center">The central axial coordinate.</param>
         /// <param name="radius">The exact distance from the center tile (must be greater than 0).</param>
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
-        public static void GetHexRing(HexCoord center, int radius, List<HexCoord> results)
+        public static void GetHexRing(HexCoord center, int radius, HashSet<HexCoord> results)
         {
             if (radius == 0)
                 return;
@@ -96,7 +96,7 @@ namespace StorytellersTable
         /// <param name="center">The central axial coordinate.</param>
         /// <param name="radius">The exact distance from the center tile (must be greater than 0).</param>
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
-        public static void GetHexRingArea(HexCoord center, int radius, List<HexCoord> results)
+        public static void GetHexRingArea(HexCoord center, int radius, HashSet<HexCoord> results)
         {
             for (int currRadius = 1; currRadius <= radius; currRadius++)
             {
@@ -110,7 +110,7 @@ namespace StorytellersTable
         /// <param name="start">The starting axial coordinate. Must be different from <paramref name="end"/>.</param>
         /// <param name="end">The ending axial coordinate. Must be different from <paramref name="start"/>.</param>
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
-        public static void GetAreaAxial(HexCoord start, HexCoord end, List<HexCoord> results)
+        public static void GetAreaAxial(HexCoord start, HexCoord end, HashSet<HexCoord> results)
         {
             if (start == end)
                 return;
@@ -128,7 +128,7 @@ namespace StorytellersTable
             }
         }
 
-        public static void GetLine(HexCoord start, HexCoord end, List<HexCoord> results)
+        public static void GetLine(HexCoord start, HexCoord end, HashSet<HexCoord> results)
         {
             if (start == end)
                 return;

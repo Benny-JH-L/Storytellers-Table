@@ -11,7 +11,7 @@ using UnityEngine;
 namespace StorytellersTable.Campaign.Modes
 {
     /// <summary>
-    /// Tile editing of the active map.
+    /// Tile editing of the active map. --> should be a container to track UI selection of the user for tile editing!, have something similar for removal confirmation!
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-500)]
@@ -97,33 +97,35 @@ namespace StorytellersTable.Campaign.Modes
             //Printer.Print(hexCoordsToEdit);
             //DebugOut.Log(this, $"update height = {updateHeight} | updateMaterialId = {updateMaterialId}");
 
-            HashSet<HexCoord> activeMapTiles = mapManager.ActiveMapData.tileDatas.Keys.ToHashSet();
-            HashSet<HexCoord> tilesToEdit = hexCoordsToEdit.ToHashSet();
-            Dictionary<HexCoord, HexRenderer> mapTileRenderer = mapManager.mapTileRenderer.GetVisualData();
+            ErrorOut.Log(this, "CONFIRM EDITS NOT WORKING RN");
 
-            foreach (HexCoord hexCoord in activeMapTiles)
-            {
-                if (!tilesToEdit.Contains(hexCoord))
-                    continue;
+            //HashSet<HexCoord> activeMapTiles = mapManager.ActiveMapData.tileDatas.Keys.ToHashSet();
+            //HashSet<HexCoord> tilesToEdit = hexCoordsToEdit.ToHashSet();
+            //Dictionary<HexCoord, HexRenderer> mapTileRenderer = mapManager.mapTileRenderer.GetVisualData();
 
-                HexRenderer hexRenderer = mapTileRenderer[hexCoord];
-                TileData tileData = mapManager.ActiveMapData.tileDatas[hexCoord];
+            //foreach (HexCoord hexCoord in activeMapTiles)
+            //{
+            //    if (!tilesToEdit.Contains(hexCoord))
+            //        continue;
 
-                // Edit tile data
-                if (updateHeight)
-                {
-                    tileData.height = newHeight;
-                    hexRenderer.height = newHeight;
-                }
-                if (updateMaterialId)
-                    tileData.tileTypeId = newTileTypeId;
-                // Set the new data
-                MapManager.Instance.SetNewTileData(tileData);
+            //    HexRenderer hexRenderer = mapTileRenderer[hexCoord];
+            //    TileData tileData = mapManager.ActiveMapData.tileDatas[hexCoord];
 
-                // Update HexRenderer                
-                hexRenderer.SetSharedMaterial(tileData.GetMaterial());
-                hexRenderer.DrawMesh();
-            }
+            //    // Edit tile data
+            //    if (updateHeight)
+            //    {
+            //        tileData.height = newHeight;
+            //        hexRenderer.height = newHeight;
+            //    }
+            //    if (updateMaterialId)
+            //        tileData.tileTypeId = newTileTypeId;
+            //    // Set the new data
+            //    MapManager.Instance.SetNewTileData(tileData);
+
+            //    // Update HexRenderer                
+            //    hexRenderer.SetSharedMaterial(tileData.GetMaterial());
+            //    hexRenderer.DrawMesh();
+            //}
         }
 
         public void Activate()

@@ -1,78 +1,133 @@
 ﻿
-using System.Collections.Generic;
-using UnityEngine;
 using StorytellersTable.Core.Data;
 using StorytellersTable.Map;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace StorytellersTable.Renderer
 {
+    public struct MapTileRendererPackage
+    {
+        /// <summary>
+        /// Key: layer,
+        /// value: set of hex coordinates.
+        /// </summary>
+        public Dictionary<int, HashSet<HexCoord>> info;
+    }
+
     /// <summary>
     /// Handles map tile rendering, HexRenderers.
     /// </summary>
     public class MapTileRenderer : MonoBehaviour
     {
-        [SerializeReference] private readonly Dictionary<HexCoord, HexRenderer> tileVisuals = new Dictionary<HexCoord, HexRenderer>();
+        /// <summary>
+        /// Key: layer,
+        /// Value: Tile visual on that layer with hex coord.
+        /// </summary>
+        private readonly Dictionary<int, Dictionary<HexCoord, HexRenderer>> tileVisuals = new();
 
         /// <summary>
-        /// Generate a HexRenderer at the hex coordinate with material store in <paramref name="tileData"/> to the scene.
+        /// Generate a HexRenderer at the hex coordinate and at <paramref name="layer"/> with material, <paramref name="materialName"/>, to the scene.
         /// May also include a shader.
         /// </summary>
-        /// <param name="tileData"></param>
+        /// <param name="hexCoord"></param>
         /// <param name="shader"></param>
-        public void AddHexTileVisual(HexCoord hexCoord, string materialName, int height, Shader shader = null)
+        public void AddHexTileVisual(HexCoord hexCoord, string materialName, int layer, Shader shader = null)
         {
-            if (tileVisuals.ContainsKey(hexCoord))
-                return;
+            if (!tileVisuals.ContainsKey(layer))
+                tileVisuals[layer] = new();
 
             Material material = MaterialLoader.instance.GetMaterial(materialName);
-            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditorContainer.GenerateHexRenderer(hexCoord, material, height);
+
+            // hex renderer exists already, update the material
+            if (tileVisuals[layer].TryGetValue(hexCoord, out HexRenderer existingRenderer))
+            {
+                existingRenderer.SetSharedMaterial(material);
+                return;
+            }
+
+            HexRenderer hexRenderer = StorytellersTable.Campaign.Modes.MapEditorContainer.GenerateHexRenderer(hexCoord, material, layer);
             hexRenderer.transform.SetParent(this.transform, true);    // parent it
 
             if (shader != null)
                 hexRenderer.SetMaterialShader(shader);
 
             // store the generated visual to the map
-            tileVisuals.Add(hexCoord, hexRenderer);
+            tileVisuals[layer].Add(hexCoord, hexRenderer);
         }
 
-        public void AddHexTileVisual(List<HexCoord> datas, string materialName, int height, Shader shader = null)
+        public void AddHexTileVisual(UpdateMapInfoPackage pacakge, Shader shader = null)
         {
-            foreach (HexCoord data in datas)
-                AddHexTileVisual(data, materialName, height, shader);
-        }
-
-        public void AddHexTileVisual(List<TileData> datas, Shader shader = null)
-        {
-            foreach (TileData data in datas)
-            {
-                AddHexTileVisual(data, shader);
-            }
+            foreach (TileData data in pacakge.info)
+                AddHexTileVisual(data.hexCoord, data.materialId, data.mapLayer, shader);
         }
 
         public void AddHexTileVisual(TileData tileData, Shader shader = null)
         {
-            AddHexTileVisual(tileData.hexCoord, tileData.tileTypeId, tileData.height, shader);
+            AddHexTileVisual(tileData.hexCoord, tileData.materialId, tileData.mapLayer, shader);
+        }
+
+        /// <summary>
+        /// Takes the visual info from <paramref name="mapTileRenderer"/> and puts it into this instance.
+        /// If this MapTileRenderer contains a entry that also exists in <paramref name="mapTileRenderer"/> and 
+        /// <paramref name="replaceExistingHexRenderer"/> is `true`, it will destroy its own entry and 
+        /// replace it with the one in <paramref name="mapTileRenderer"/>.
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// Note: the HexRenderer stored in <paramref name="mapTileRenderer"/> will be "stolen" and put into this instance.
+        /// </remarks>
+        /// <param name="mapTileRenderer"></param>
+        /// <param name="replaceExistingHexRenderer"></param>
+        public void AddFromMapTileRenderer(MapTileRenderer mapTileRenderer, bool replaceExistingHexRenderer = false)
+        {
+            foreach ((int layer, var dict) in mapTileRenderer.GetVisualData())
+            {
+                // check if this map tile renderer has this layer
+                if (!tileVisuals.TryGetValue(layer, out var _))
+                    tileVisuals[layer] = new();
+
+                foreach ((HexCoord hexCoord, HexRenderer hexRendererToSteal) in dict)
+                {
+                    // A hex renderer already exists with the given entry: [layer][hexCoord], skip it (if `replaceExistingHexRenderer` is also false)
+                    if (tileVisuals[layer].TryGetValue(hexCoord, out HexRenderer _))
+                    {
+                        if (!replaceExistingHexRenderer)
+                            continue;
+
+                        // Destroy existing HexRenderer and remove entry
+                        Destroy(tileVisuals[layer][hexCoord].gameObject);
+                        tileVisuals[layer].Remove(hexCoord);
+                    }
+
+                    // add to tile visuals and set new parent for the HexRenderer
+                    tileVisuals[layer].Add(hexCoord, hexRendererToSteal);
+                    hexRendererToSteal.transform.SetParent(this.transform, false);
+                }
+            }
         }
 
         /// <summary>
         /// Removes a HexRenderer, at the given hex coordinate <paramref name="data"/>.
         /// </summary>
         /// <param name="data"></param>
-        public void RemoveVisual(HexCoord hexCoord)
+        public void RemoveVisual(HexCoord hexCoord, int layer)
         {
-            if (tileVisuals.ContainsKey(hexCoord))
+            if (EntryExists(hexCoord, layer))
             {
-                Destroy(tileVisuals[hexCoord].gameObject);
-                tileVisuals.Remove(hexCoord);
+                Destroy(tileVisuals[layer][hexCoord].gameObject);
+                tileVisuals[layer].Remove(hexCoord);
             }
         }
 
-        public void RemoveVisual(List<HexCoord> datas)
+        public void RemoveVisual(MapTileRendererPackage package)
         {
-            foreach (HexCoord data in datas)
-                RemoveVisual(data);
+            foreach ((int layer, HashSet<HexCoord> hexSet) in package.info)
+            {
+                foreach (HexCoord hexCoord in hexSet)
+                    RemoveVisual(hexCoord, layer);
+            }
         }
-
 
         #region tile highlight & selection & ghost visual
 
@@ -83,10 +138,10 @@ namespace StorytellersTable.Renderer
         /// <remarks>Highlights tile if <paramref name="enable"/> is True. Disable's highlight otherwise.</remarks>
         /// <param name="datas"></param>
         /// <param name="enable"></param>
-        public void EnableHighlight(List<HexCoord> datas, bool enable)
+        public void EnableHighlight(UpdateMapInfoPackage package, bool enable)
         {
-            foreach (HexCoord hexCoord in datas)
-                EnableHighlight(hexCoord, enable);
+            foreach (TileData data in package.info)
+                EnableHighlight(data.hexCoord, data.mapLayer, enable);
         }
 
         /// <summary>
@@ -96,46 +151,49 @@ namespace StorytellersTable.Renderer
         /// <remarks>Highlights tile if <paramref name="enable"/> is True. Disable's highlight otherwise.</remarks>
         /// <param name="datas"></param>
         /// <param name="enable"></param>
-        public void EnableHighlight(HexCoord hexCoord, bool enable)
+        public void EnableHighlight(HexCoord hexCoord, int layer, bool enable)
         {
-            if (!tileVisuals.ContainsKey(hexCoord))
+            if (!EntryExists(hexCoord, layer))
                 return;
 
-            tileVisuals[hexCoord].EnableHighlight(enable);
+            tileVisuals[layer][hexCoord].EnableHighlight(enable);
         }
 
-        public void EnableSelectedVisual(List<HexCoord> datas, bool enable)
+        public void EnableSelectedVisual(UpdateMapInfoPackage package, bool enable)
         {
-            foreach (HexCoord hexCoord in datas)
-                EnableSelectedVisual(hexCoord, enable);
+            foreach (TileData data in package.info)
+                EnableSelectedVisual(data.hexCoord, data.mapLayer, enable);
         }
 
-        public void EnableSelectedVisual(HexCoord hexCoord, bool enable)
+        public void EnableSelectedVisual(HexCoord hexCoord, int layer, bool enable)
         {
-            if (!tileVisuals.ContainsKey(hexCoord))
+            if (!EntryExists(hexCoord, layer))
                 return;
 
-            tileVisuals[hexCoord].SetSelectedVisual(enable);
+            tileVisuals[layer][hexCoord].SetSelectedVisual(enable);
         }
 
-        public void EnableGhostVisual(List<HexCoord> datas, bool enable)
+        public void EnableGhostVisual(UpdateMapInfoPackage package, bool enable)
         {
-            foreach (HexCoord hexCoord in datas)
-                EnableGhostVisual(hexCoord, enable);
+            foreach (TileData data in package.info)
+                EnableGhostVisual(data.hexCoord, data.mapLayer, enable);
         }
 
-        public void EnableGhostVisual(HexCoord hexCoord, bool enable)
+        public void EnableGhostVisual(HexCoord hexCoord, int layer, bool enable)
         {
-            if (!tileVisuals.ContainsKey(hexCoord))
+            if (!EntryExists(hexCoord, layer))
                 return;
 
-            tileVisuals[hexCoord].SetGhostVisual(enable);
+            tileVisuals[layer][hexCoord].SetGhostVisual(enable);
         }
 
         public void DisableAllHighlights()
         {
-            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
-                HexRenderer.EnableHighlight(false);
+            foreach ((_, var dict) in  tileVisuals)
+            {
+                foreach ((_, HexRenderer HexRenderer) in dict)
+                    HexRenderer.EnableHighlight(false);
+            }
         }
 
         /// <summary>
@@ -145,28 +203,39 @@ namespace StorytellersTable.Renderer
         /// If a coordinate does not exist in the MapTileRenderer but does in <paramref name="hexCoordsSet"/> nothing will happen.
         /// </remarks>
         /// <param name="hexCoordsSet"></param>
-        public void DisableAllHighlightsExcept(HashSet<HexCoord> hexCoordsSet)
+        public void DisableAllHighlightsExcept(MapTileRendererPackage package)
         {
-            foreach (HexCoord hexCoord in tileVisuals.Keys)
+            foreach ((int layer, var dict) in tileVisuals)
             {
-                if (hexCoordsSet.Contains(hexCoord))
+                // check if this layer has tiles to disable highlight
+                if (!package.info.ContainsKey(layer))
                     continue;
 
-                // Disable highlight
-                EnableHighlight(hexCoord, false);
+                // go disable highlights that both exist visually and in the package.
+                foreach ((HexCoord hexCoord, _) in dict)
+                {
+                    if (package.info[layer].Contains(hexCoord))
+                        EnableHighlight(hexCoord, layer, false);
+                }
             }
         }
 
         public void DisableAllSelectedVisuals()
         {
-            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
-                HexRenderer.SetSelectedVisual(false);
+            foreach ((_, var dict) in tileVisuals)
+            {
+                foreach ((_, HexRenderer HexRenderer) in dict)
+                    HexRenderer.SetSelectedVisual(false);
+            }
         }
 
         public void DisableAllGhostVisuals()
         {
-            foreach ((_, HexRenderer HexRenderer) in tileVisuals)
-                HexRenderer.SetGhostVisual(false);
+            foreach ((_, var dict) in tileVisuals)
+            {
+                foreach ((_, HexRenderer HexRenderer) in dict)
+                    HexRenderer.SetGhostVisual(false);
+            }
         }
 
         #endregion
@@ -198,16 +267,32 @@ namespace StorytellersTable.Renderer
         public void ClearVisuals()
         {
             // Destroy tile visuals
-            foreach ((_, HexRenderer hexRenderer) in tileVisuals)
-                Destroy(hexRenderer.gameObject);
+            foreach (var dict in tileVisuals.Values)
+            {
+                foreach (HexRenderer hexRenderer in dict.Values)
+                    Destroy(hexRenderer.gameObject);
+                dict.Clear();
+            }
 
             tileVisuals.Clear();
         }
 
         public void ReDrawMesh()
         {
-            foreach ((_, HexRenderer hexRenderer) in tileVisuals)
-                hexRenderer.DrawMesh();
+            foreach (var dict in tileVisuals.Values)
+            {
+                foreach (HexRenderer hexRenderer in dict.Values)
+                    hexRenderer.DrawMesh();
+            }
+        }
+
+        private bool EntryExists(HexCoord hexCoord, int layer)
+        {
+            if (!tileVisuals.ContainsKey(layer))
+                return false;
+            if (!tileVisuals[layer].ContainsKey(hexCoord))
+                return false;
+            return true;
         }
 
         ///// <summary>
@@ -223,7 +308,7 @@ namespace StorytellersTable.Renderer
         /// Return's the renderer's data.
         /// </summary>
         /// <returns></returns>
-        public Dictionary<HexCoord, HexRenderer> GetVisualData()
+        public Dictionary<int, Dictionary<HexCoord, HexRenderer>> GetVisualData()
         {
             return tileVisuals;
         }
@@ -234,7 +319,10 @@ namespace StorytellersTable.Renderer
         /// <returns></returns>
         public int Count()
         {
-            return tileVisuals.Count;
+            int count = 0;
+            foreach (var dict in tileVisuals.Values)
+                count += dict.Count;
+            return count;
         }
     }
 

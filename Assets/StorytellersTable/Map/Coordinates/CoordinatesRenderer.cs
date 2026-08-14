@@ -37,13 +37,11 @@ namespace StorytellersTable.Renderer
         {
             // Filter labels to display
             HexCoord camRigHexCoord = HexMath.WorldToAxial(Singleton.Instance.cameraController.transform.position);
-            List<HexCoord> tmpList = new();
-            tmpList.Add(camRigHexCoord);
-            HexMath.GetHexRingArea(camRigHexCoord, renderDistance, tmpList);
+            HashSet<HexCoord> tmpSet = new();
+            tmpSet.Add(camRigHexCoord);
+            HexMath.GetHexRingArea(camRigHexCoord, renderDistance, tmpSet);
 
-            HashSet<HexCoord> tmpSet = tmpList.ToHashSet<HexCoord>();   // convert to hash set for quicker look up
             Vector3 camForward = Camera.main.transform.forward;
-
             // Update each label
             foreach ((HexCoord hexCoord, TextMeshPro tmp) in _hexLabels)
             {
@@ -83,13 +81,26 @@ namespace StorytellersTable.Renderer
         {
             HexCoord hexCoord = tileData.hexCoord;
 
+            // check for existing label at hexcoord
+            if (_hexLabels.TryGetValue(hexCoord, out var label))
+            {
+                Vector3 oldPos = label.transform.position;
+                Vector3 newPos = label.transform.position;
+                newPos.y = ComputeLabelOffset(tileData);
+
+                newPos = (newPos.y > oldPos.y ? newPos : oldPos);   // take only the greater
+
+                label.transform.position = newPos;
+                return;
+            }
+
             // Create the label
             TextMeshPro tmp = new GameObject($"Hex{tileData.hexCoord.ToString()}", typeof(TextMeshPro)).GetComponent<TextMeshPro>();
             tmp.transform.SetParent(this.transform, true);
 
             // Set the labels position in the world
             Vector3 pos = HexMath.GetPositionFromAxial(hexCoord); // ensure correct position is used
-            pos.y += _yOffset + (tileData.height / 2f) + tileData.yPos;   // offset y based on tile data
+            pos.y += ComputeLabelOffset(tileData);
             tmp.transform.position = pos;
             //tmp.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             
@@ -108,6 +119,10 @@ namespace StorytellersTable.Renderer
 
             tmp.enabled = showLabels;
             _hexLabels[hexCoord] = tmp;
+        }
+        private float ComputeLabelOffset(TileData tileData)
+        {
+            return (_yOffset + (Singleton.Instance.height / 2f) + tileData.mapLayer);
         }
 
         /// <summary>

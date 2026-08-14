@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 75592059}
   - component: {fileID: 75592058}
   - component: {fileID: 75592057}
+  - component: {fileID: 75592061}
   m_Layer: 6
   m_Name: Plane (for mapedit raycasting)
   m_TagString: Untagged
@@ -230,8 +231,24 @@ Transform:
   m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 1457949020}
+  m_Father: {fileID: 2020583434}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &75592061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 75592056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 941fdbee725230349831bf816495e906, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapEditRaycastTarget
+  meshFilter: {fileID: 0}
+  meshRenderer: {fileID: 0}
+  meshCollider: {fileID: 0}
+  cameraRig: {fileID: 1457949021}
 --- !u!1 &133416156
 GameObject:
   m_ObjectHideFlags: 0
@@ -909,6 +926,7 @@ MonoBehaviour:
   cameraController: {fileID: 1457949021}
   innerSize: 0
   outerSize: 2
+  height: 1
   isFlatTopped: 0
   mainCanvas: {fileID: 1403335829}
   mapEditorUIPrefab: {fileID: 5129445922538064225, guid: 47d01486adf40df42a7a2e2c7500ee88, type: 3}
@@ -1422,15 +1440,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1457949019}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 330585546}
   - {fileID: 1320371449}
-  - {fileID: 75592060}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2020583434}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1457949021
 MonoBehaviour:
@@ -1623,6 +1640,39 @@ MonoBehaviour:
   runtimeUI: {fileID: 0}
   newTileTypeId: floor_tile
   newHeight: 5
+--- !u!1 &2020583433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2020583434}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2020583434
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2020583433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1457949020}
+  - {fileID: 75592060}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1632,7 +1682,7 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 1179449150}
-  - {fileID: 1457949020}
+  - {fileID: 2020583434}
   - {fileID: 1022669222}
   - {fileID: 949844488}
   - {fileID: 308999769}

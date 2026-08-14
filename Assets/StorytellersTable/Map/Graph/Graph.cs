@@ -17,23 +17,26 @@ namespace StorytellersTable.Core.Data
         /// <param name="hexCoord"></param>
         /// <param name="checkExists"></param>
         /// <returns>Return's a list of HexCoords.</returns>
-        public static List<HexCoord> GetAdjacentHexCoords(MapData mapData, HexCoord hexCoord, bool checkExists = false)
-        {
-            // We can compute in O(1) time the adjacent hex tiles instead having to store them
-            List<HexCoord> result = new List<HexCoord>();
+        //public static List<HexCoord> GetAdjacentHexCoords(MapData mapData, HexCoord hexCoord, bool checkExists = false)
+        //{
+        //    // We can compute in O(1) time the adjacent hex tiles instead having to store them
+        //    List<HexCoord> result = new List<HexCoord>();
 
-            foreach (HexCoord offset in HexCoord.ADJACENT_TILE_OFFSETS)
-            {
-                // don't check if the tile exists on the map
-                if (!checkExists)
-                    result.Add(hexCoord + offset);
-                // check if the tile exists (not null) on the map
-                else if (checkExists && mapData.tileDatas.TryGetValue(hexCoord + offset, out TileData data))
-                    result.Add(hexCoord + offset);
-            }
+        //    foreach (HexCoord offset in HexCoord.ADJACENT_TILE_OFFSETS)
+        //    {
+        //        // don't check if the tile exists on the map
+        //        if (!checkExists)
+        //            result.Add(hexCoord + offset);
+        //        // check if the tile exists (not null) on the map
+        //        else if (checkExists && mapData.tileDatas.TryGetValue(hexCoord + offset, out TileData data))
+        //            result.Add(hexCoord + offset);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
+
+
+
 
         /// <summary>
         /// 

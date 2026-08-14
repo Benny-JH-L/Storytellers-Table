@@ -7,10 +7,19 @@ using UnityEngine;
 
 namespace StorytellersTable.Map
 {
+    public struct UpdateMapInfoPackage
+    {
+        /// <summary>
+        /// Contains the updated info.
+        /// </summary>
+        public HashSet<TileData> info;
+    }
+
     /// <summary>
     /// Manages active map visuals, file routing, in-memory tier maps, and runtime selection pipelines.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-500)]
     public class MapManager : MonoBehaviour
     {
         private readonly static string simulatedSwitch = "1";   // simulates map switching id
@@ -136,23 +145,37 @@ namespace StorytellersTable.Map
         {
             ClearActiveMapVisuals(); // clear the current map visuals before loading new ones
 
-            foreach ((HexCoord hexCoord, TileData tileData) in mapData.tileDatas)
+            foreach ((int layer, var value) in mapData.mapTileData.GetTileRepresentation())
             {
-                // Generate tile visuals
-                mapTileRenderer.AddHexTileVisual(tileData);
+                foreach ((HexCoord hex, TileData data) in value)
+                {
+                    // Generate tile visuals
+                    mapTileRenderer.AddHexTileVisual(data);
 
-                // Generate hex coord labels
-                coordinatesRenderer.AddLabel(tileData);
-            }
+                    // Generate hex coord labels
+                    coordinatesRenderer.AddLabel(data);
+                }
+            }    
+
+            //foreach ((HexCoord hexCoord, TileData tileData) in mapData.tileDatas)
+            //{
+            //    // Generate tile visuals
+            //    mapTileRenderer.AddHexTileVisual(tileData);
+
+            //    // Generate hex coord labels
+            //    coordinatesRenderer.AddLabel(tileData);
+            //}
 
             // Other visuals ...
         }
 
-        public void AddToActiveMap(List<TileData> tileDatas)
+        public void AddToActiveMap(UpdateMapInfoPackage package)
         {
             DebugOut.Log(this, "Adding tile datas...");
-            foreach (TileData data in tileDatas)
+            foreach (TileData data in package.info)
+            {
                 AddToActiveMap(data);
+            }
         }
 
         /// <summary>
@@ -162,41 +185,53 @@ namespace StorytellersTable.Map
         public void AddToActiveMap(TileData tileData)
         {
             HexCoord hexCoord = tileData.hexCoord;
-            ActiveMapData.tileDatas[hexCoord] = tileData;
-            mapTileRenderer.AddHexTileVisual(tileData);    // add hex tile visual
+            ActiveMapData.mapTileData.AddTile(tileData);
+            mapTileRenderer.AddHexTileVisual(tileData);    // add hex tile visual // TODO: add level diffing
             coordinatesRenderer.AddLabel(tileData);        // add hex pos label
+        }
+
+        public void AddToActiveMap(MapTileRepresentation other)
+        {
+            //ActiveMapData.mapTileData.AddFromMapTileRepresentation(other); // already done
+
+            foreach (var dict in other.GetTileRepresentation().Values)
+            {
+                foreach (TileData tileData in dict.Values)
+                    AddToActiveMap(tileData);
+            }
         }
 
         /// <summary>
         /// Removes all items in <paramref name="datas"/> from the active map, their visual, coordinate label, and tile data.
         /// </summary>
         /// <param name="datas"></param>
-        public void RemoveFromActiveMap(List<HexCoord> datas)
+        public void RemoveFromActiveMap(UpdateMapInfoPackage package)
         {
             //DebugOut.Log(this, "Removing tile datas...");
-            foreach (HexCoord data in datas)
+            foreach (TileData data in package.info)
+            {
                 RemoveFromActiveMap(data);
+            }
         }
 
         /// <summary>
         /// Removes tile with <paramref name="hexCoord"/> from the active map, its visual, coordinate label, and tile data.
         /// </summary>
         /// <param name="hexCoord"></param>
-        public void RemoveFromActiveMap(HexCoord hexCoord)
+        public void RemoveFromActiveMap(TileData tileData)
         {
-            if (!ActiveMapData.tileDatas.ContainsKey(hexCoord))
-                return;
-
             //DebugOut.Log(this, $"Removing [{hexCoord}] tile");
 
+            ErrorOut.Log(this, "RemoveFromActiveMap NOT FULLY IMPLEMENTED");
             // remove the position label
-            coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]); 
+            //coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]); 
 
-            // Destroy tile visual
-            mapTileRenderer.RemoveVisual(hexCoord);
+            //// Destroy tile visual
+            //mapTileRenderer.RemoveVisual(hexCoord);
 
             // remove position & tile data from the map data
-            ActiveMapData.tileDatas.Remove(hexCoord);
+            //ActiveMapData.tileDatas.Remove(hexCoord);
+            ActiveMapData.mapTileData.TryRemove(tileData);
         }
 
         /// <summary>
@@ -205,14 +240,16 @@ namespace StorytellersTable.Map
         /// <param name="newData"></param>
         public void SetNewTileData(TileData newData)
         {
+            ErrorOut.Log(this, "SetNewTileData NOT FULLY IMPLEMENTED");
             HexCoord hexCoord = newData.hexCoord;
 
             // Update the coordinate renderer
-            coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]);
-            coordinatesRenderer.AddLabel(ActiveMapData.tileDatas[hexCoord]);
+            //coordinatesRenderer.RemoveLabel(ActiveMapData.tileDatas[hexCoord]);
+            //coordinatesRenderer.AddLabel(ActiveMapData.tileDatas[hexCoord]);
 
             // Set the new data
-            ActiveMapData.tileDatas[hexCoord] = newData;
+            //ActiveMapData.tileDatas[hexCoord] = newData;
+            ActiveMapData.mapTileData.UpdateTile(newData);
         }
 
         /// <summary>
@@ -264,7 +301,7 @@ namespace StorytellersTable.Map
         public void ClearTiles()
         {
             ClearActiveMapVisuals();
-            ActiveMapData.Clear();
+            ActiveMapData.mapTileData.Clear();
         }
         #endregion
 

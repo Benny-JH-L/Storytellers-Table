@@ -14,5 +14,19 @@ namespace StorytellersTable.Utility.Printer
             }
             Debug.Log(s);
         }
+
+        public static void Print(Dictionary<int, HashSet<HexCoord>> dict)
+        {
+            string s = "{\n";
+            foreach ((int i, var hashSet) in dict)
+            {
+                s += $"[{i}: ";
+                foreach (var hexCoord in hashSet) 
+                    s += hexCoord.ToString() + ", ";
+                s += "], \n";
+            }
+            s += "}";
+            Debug.Log(s);
+        }
     }
 }
