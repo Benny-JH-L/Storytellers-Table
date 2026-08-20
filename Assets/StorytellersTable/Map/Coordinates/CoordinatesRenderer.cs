@@ -122,7 +122,8 @@ namespace StorytellersTable.Renderer
         }
         private float ComputeLabelOffset(TileData tileData)
         {
-            return (_yOffset + tileData.mapLayer.Y() + (Singleton.Instance.height / 2f));
+            //return (_yOffset + tileData.mapLayer.Y() + (Singleton.Instance.height / 2f));
+            return (_yOffset + tileData.mapLayer.Y());
         }
 
         /// <summary>

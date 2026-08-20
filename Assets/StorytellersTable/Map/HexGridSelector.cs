@@ -90,8 +90,12 @@ namespace StorytellersTable
         {
             if (GetLayerFromCameraRaycast(cam, out Layer layer))
             {
+                Layer oldLayer = payload.activeLayer;
+
                 payload.activeLayer = layer;
                 Pick(payload, out result);
+
+                payload.activeLayer = oldLayer;         // set layer back
                 return true;
             }
 
