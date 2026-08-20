@@ -1,5 +1,4 @@
-﻿
-using StorytellersTable.Core.Data;
+﻿using Assets.StorytellersTable.Core.Map;
 using StorytellersTable.Map;
 using StorytellersTable.Renderer;
 using UnityEngine;

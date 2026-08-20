@@ -1,61 +1,9 @@
-﻿using StorytellersTable.Map;
-using System;
+﻿
+using StorytellersTable.Map;
 using System.Collections.Generic;
-using UnityEngine;
 
-namespace StorytellersTable.Core.Data
+namespace Assets.StorytellersTable.Core.Map
 {
-    /// <summary>
-    /// Raw tile information.
-    /// </summary>
-    [Serializable]
-    public class TileData
-    {
-        public HexCoord hexCoord;
-        public int mapLayer;
-        public string materialId;   // ex. Grass, Water, Snow, Desert, etc..
-
-        /// <summary>
-        /// Universal Pointer ID referencing nested lower-tier maps.
-        /// If this tile exists on a WorldMap, this field references a StageMap ID.
-        /// If on a StageMap, it points to a FloorMap ID.
-        /// </summary>
-        //public string targetNestedMapId;
-
-        public TileData(HexCoord hexCoord, int mapLayer, string materialId)
-        {
-            this.hexCoord = hexCoord;
-            this.mapLayer = mapLayer;
-            this.materialId = materialId;
-            //targetNestedMapId = String.Empty;
-        }
-
-        public Material GetMaterial()
-        {
-            return MaterialLoader.instance.GetMaterial(materialId);
-        }
-
-        public override string ToString()
-        {
-            //return $"HexCoord{hexCoord.ToString()} | layer[{layer}] | tileType[{tileTypeId} | nestedMapTarget[{targetNestedMapId}]]";
-            return $"HexCoord{hexCoord.ToString()} | layer[{mapLayer}] | tileType[{materialId}";
-        }
-
-        // HEAR ME OUT, TileBase contains all the data for World Tile, Stage Tile, and Floor tile, but only select stuff is shown based on map!
-        // (makes the map editor logic and UI easier to make!
-    }
-
-    /// <summary>
-    /// Categorizes the hierarchical tiered nesting depth of a map. 
-    /// World is the heighest tier, Stage middle tier, and Floor is the lowest tier.
-    /// </summary>
-    public enum MapTier
-    {
-        World,
-        Stage,
-        Floor
-    }
-
     /// <summary>
     /// Class to store and manage tile data for a map.
     /// </summary>
@@ -65,11 +13,41 @@ namespace StorytellersTable.Core.Data
         /// Key: layer,
         /// Value: Tile data on that layer.
         /// </summary>
-        private readonly Dictionary<int, Dictionary<HexCoord, TileData>> dictTileDatas;
-        
+        private readonly Dictionary<Layer, Dictionary<HexCoord, TileData>> dictTileDatas;
+
         public MapTileRepresentation()
         {
             dictTileDatas = new();
+        }
+
+        /// <summary>
+        /// Return's a list of <paramref name="datas"/> with the HexCoord <paramref name="hexCoord"/>, 
+        /// from a range of layers, between [<paramref name="max"/>, <paramref name="min"/>].
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// <paramref name="datas"/> will be sorted in descending order based on its layer.
+        /// </remarks>
+        /// <param name="hexCoord"></param>
+        /// <param name="datas"></param>
+        public void GetTileDataStack(HexCoord hexCoord, out List<TileData> datas, int max = int.MaxValue, int min = int.MinValue)
+        {
+            datas = new();
+
+            // TODO: need something to set the search range if the `max` and `min` aren't set; use the existing layers in the dict to set the search range
+
+            for (int layerVal = min; layerVal <= max; layerVal++)
+            {
+                Layer layer = new (layerVal);
+                // try to get the layer's tile data
+                if (dictTileDatas.TryGetValue(layer, out Dictionary<HexCoord, TileData> dict))
+                {
+                    // get the tile data if it exists
+                    if (dict.TryGetValue(hexCoord, out TileData tileData))
+                        datas.Add(tileData);
+                }
+            }
+            datas.Reverse();
         }
 
         /// <summary>
@@ -82,7 +60,7 @@ namespace StorytellersTable.Core.Data
         /// <param name="data"></param>
         public void AddTile(TileData data)
         {
-            int layer = data.mapLayer;
+            Layer layer = data.mapLayer;
             if (!dictTileDatas.ContainsKey(layer))
                 dictTileDatas[layer] = new();
             dictTileDatas[layer][data.hexCoord] = data;
@@ -110,7 +88,7 @@ namespace StorytellersTable.Core.Data
                 // in this for-loop, all the TileData's are guranteed to have the same `mapLayer` value
                 foreach ((HexCoord hexCoord, TileData data) in dict)
                 {
-                    int layer = data.mapLayer;
+                    Layer layer = data.mapLayer;
                     // check if it has this layer
                     if (!dictTileDatas.TryGetValue(layer, out var _))
                         dictTileDatas[layer] = new();
@@ -133,7 +111,7 @@ namespace StorytellersTable.Core.Data
 
         public void UpdateTile(TileData data)
         {
-            int layer = data.mapLayer;
+            Layer layer = data.mapLayer;
             if (!EntryExists(data))
                 return;
             dictTileDatas[layer][data.hexCoord] = data;
@@ -152,7 +130,7 @@ namespace StorytellersTable.Core.Data
         /// <returns></returns>        
         public bool TryRemove(TileData data)
         {
-            int layer = data.mapLayer;
+            Layer layer = data.mapLayer;
             if (!EntryExists(data))
                 return false;
             dictTileDatas[layer].Remove(data.hexCoord);
@@ -170,7 +148,7 @@ namespace StorytellersTable.Core.Data
             return EntryExists(data.mapLayer, data.hexCoord);
         }
 
-        public bool EntryExists(int layer, HexCoord hexCoord)
+        public bool EntryExists(Layer layer, HexCoord hexCoord)
         {
             if (!dictTileDatas.ContainsKey(layer))
                 return false;
@@ -179,7 +157,7 @@ namespace StorytellersTable.Core.Data
             return true;
         }
 
-        public Dictionary<int, Dictionary<HexCoord, TileData>> GetTileRepresentation()
+        public Dictionary<Layer, Dictionary<HexCoord, TileData>> GetTileRepresentation()
         {
             return dictTileDatas;
         }
@@ -187,6 +165,12 @@ namespace StorytellersTable.Core.Data
         public void Clear()
         {
             dictTileDatas.Clear();
+        }
+
+        public void GetLayers(out List<Layer> layers)
+        {
+            layers = new();
+            layers.AddRange(dictTileDatas.Keys);
         }
 
         /// <summary>
@@ -203,7 +187,7 @@ namespace StorytellersTable.Core.Data
         /// </summary>
         /// <param name="layer"></param>
         /// <returns></returns>
-        public int LayerSize(int layer)
+        public int LayerSize(Layer layer)
         {
             return dictTileDatas[layer].Count;
         }
@@ -215,64 +199,11 @@ namespace StorytellersTable.Core.Data
         public int TotalSize()
         {
             int size = 0;
-            foreach ((int layer, Dictionary<HexCoord, TileData> value) in dictTileDatas)
+            foreach ((var layer, Dictionary<HexCoord, TileData> value) in dictTileDatas)
             {
                 size += value.Count;
             }
             return size;
-        }
-    }
-
-    /// <summary>
-    /// Base class representing structural map characteristics and coordinate tracking.
-    /// </summary>
-    [Serializable]
-    public abstract class MapData
-    {
-        [SerializeField] public string mapId;
-        [SerializeField] public string mapName;
-        [SerializeField] public MapTier tier;
-
-        /// <summary>
-        /// Map hex coords to pure data elements.
-        /// </summary>
-        //public Dictionary<HexCoord, TileData> tileDatas = new Dictionary<HexCoord, TileData>();
-        public MapTileRepresentation mapTileData;
-
-        public MapData()
-        {
-            mapTileData = new();
-        }
-    }
-
-    [Serializable]
-    public class WorldMap : MapData
-    {
-        // POI labels, regional labels, etc.
-
-        public WorldMap() : base()
-        {
-            tier = MapTier.World;
-        }
-    }
-
-    [Serializable]
-    public class StageMap : MapData
-    {
-        // POI labels, regional labels, etc.
-
-        public StageMap() : base()
-        {
-            tier = MapTier.Stage;
-        }
-    }
-
-    [Serializable]
-    public class FloorMap : MapData
-    {
-        public FloorMap() : base()
-        {
-            tier = MapTier.Floor;
         }
     }
 }

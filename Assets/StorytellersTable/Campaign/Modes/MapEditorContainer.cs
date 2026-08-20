@@ -1,5 +1,4 @@
-﻿
-using StorytellersTable.Core.Data;
+﻿using Assets.StorytellersTable.Core.Map;
 using StorytellersTable.Map;
 using StorytellersTable.Renderer;
 using StorytellersTable.UiLogic;
@@ -9,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -65,6 +65,8 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] public int activeLayer = 0; // when this changes i need to also move the GameObject named "Plane (for mapedit raycasting)" to the same y-pos for better feedback!
                                                      // ^ chages need to be made: keybinds to move camerea up/down to `space bar` and `left-ctrl` respectively, (use left-alt for cam up/down thing) then use q/e to move the active layer down and up respectively
                                                      // i might want to redo the placement, edit, removal logic with the new placement class.
+        [SerializeField] public int layerRange = 2;
+
         private void Awake()
         {
             if (instance != null && instance != this)
@@ -185,7 +187,7 @@ namespace StorytellersTable.Campaign.Modes
             }
             else if (editModes.SelectionMode == SelectModeTypes.singleSelect)
             {
-                if (gridSelector.TryPick(activeLayer, out int outLayer, out HexCoord outHexCoord, out _))
+                if (gridSelector.TryPick(activeLayer, out Layer outLayer, out HexCoord outHexCoord, out _))
                 {
                     unconfirmedTilePackage.info[outLayer] = new() { outHexCoord };
 
@@ -193,11 +195,14 @@ namespace StorytellersTable.Campaign.Modes
                 }
             }
 
+            //GridSelectorPayload gridSelectorPay = new GridSelectorPayload() { coords = unconfirmedHexCoords, activeLayer = new Layer(activeLayer), layerRange = layerRange };
+            //gridSelector.PickWithCamera(gridSelectorPay, Camera.main, out List<TileData> tileDataPicked);
+
             // filter out hexcoords based on the active edit mode
             //DebugOut.Log(this, "before filter:");
             //Printer.Print(unconfirmedTilePackage.info);
 
-            unconfirmedTilePackage.info[activeLayer] = unconfirmedHexCoords;
+            unconfirmedTilePackage.info[new Layer(activeLayer)] = unconfirmedHexCoords;
             FilterOutHexcoords(unconfirmedTilePackage);
 
             //DebugOut.Log(this, "after filter:");
@@ -302,7 +307,7 @@ namespace StorytellersTable.Campaign.Modes
         private void FilterOutHexcoords(MapTileRendererPackage package)
         {
             MapTileRepresentation activeMapTileRep = ActiveMapData.mapTileData;
-            Dictionary<int, HashSet<HexCoord>> packageInfo = package.info;
+            Dictionary<Layer, HashSet<HexCoord>> packageInfo = package.info;
 
             if (selectOn)
             {
@@ -310,7 +315,7 @@ namespace StorytellersTable.Campaign.Modes
                 if (editModes.IsTilePlaceOn())
                 {
                     // Go though each layer
-                    foreach ((int layer, HashSet<HexCoord> hashSet) in packageInfo)
+                    foreach ((var layer, HashSet<HexCoord> hashSet) in packageInfo)
                     {
                         hashSet.RemoveWhere(hexCoord => activeMapTileRep.EntryExists(layer, hexCoord));
                     }
@@ -319,7 +324,7 @@ namespace StorytellersTable.Campaign.Modes
                 else
                 {
                     // Go though each layer
-                    foreach ((int layer, HashSet<HexCoord> hashSet) in packageInfo)
+                    foreach ((var layer, HashSet<HexCoord> hashSet) in packageInfo)
                     {
                         // exclude coords that aren't on the map
                         hashSet.RemoveWhere(hexCoord => !activeMapTileRep.EntryExists(layer, hexCoord));
@@ -337,7 +342,7 @@ namespace StorytellersTable.Campaign.Modes
                     return;
                 }
                 // filter out coords that aren't in the container's confirmed for deselecting (edit/remove modes)
-                foreach ((int layer, HashSet<HexCoord> hashSet) in packageInfo)
+                foreach ((var layer, HashSet<HexCoord> hashSet) in packageInfo)
                 {
                     // exclude coords that weren't selected beforehand
                     hashSet.RemoveWhere(HexCoord => !selectionContainer.ConfirmedTiles.EntryExists(layer, HexCoord));
@@ -345,7 +350,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // clean up empty entries
-            foreach (int layer in packageInfo.Keys.ToList())
+            foreach (var layer in packageInfo.Keys.ToList())
             {
                 if (packageInfo[layer].Count == 0)
                     packageInfo.Remove(layer);
@@ -364,7 +369,7 @@ namespace StorytellersTable.Campaign.Modes
             package = new() { info = new() };
             var activeTileData = ActiveMapData.mapTileData;
 
-            foreach ((int layer, HashSet<HexCoord> set) in mapTileRendererPackage.info)
+            foreach ((var layer, HashSet<HexCoord> set) in mapTileRendererPackage.info)
             {
                 foreach (HexCoord hexCoord in set)
                 {
@@ -504,12 +509,12 @@ namespace StorytellersTable.Campaign.Modes
         #endregion
 
         #region hex visual generation
-        public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat, int layer)
+        public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat, Layer layer)
         {
             HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer)).GetComponent<HexRenderer>();
             // Set up where the visual's position in the world
             Vector3 pos = HexMath.GetPositionFromAxial(hexCoord);
-            pos.y += layer; // offset by layer
+            pos.y += layer.Y(); // offset by layer
             hexRenderer.transform.position = pos;
 
             // Set up HexRenderer

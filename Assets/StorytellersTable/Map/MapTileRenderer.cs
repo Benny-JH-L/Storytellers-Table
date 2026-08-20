@@ -1,5 +1,4 @@
-﻿
-using StorytellersTable.Core.Data;
+﻿using Assets.StorytellersTable.Core.Map;
 using StorytellersTable.Map;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,7 +11,7 @@ namespace StorytellersTable.Renderer
         /// Key: layer,
         /// value: set of hex coordinates.
         /// </summary>
-        public Dictionary<int, HashSet<HexCoord>> info;
+        public Dictionary<Layer, HashSet<HexCoord>> info;
     }
 
     /// <summary>
@@ -24,15 +23,17 @@ namespace StorytellersTable.Renderer
         /// Key: layer,
         /// Value: Tile visual on that layer with hex coord.
         /// </summary>
-        private readonly Dictionary<int, Dictionary<HexCoord, HexRenderer>> tileVisuals = new();
+        private readonly Dictionary<Layer, Dictionary<HexCoord, HexRenderer>> tileVisuals = new();
 
         /// <summary>
         /// Generate a HexRenderer at the hex coordinate and at <paramref name="layer"/> with material, <paramref name="materialName"/>, to the scene.
         /// May also include a shader.
         /// </summary>
         /// <param name="hexCoord"></param>
+        /// <param name="materialName"></param>
+        /// <param name="layer"></param>
         /// <param name="shader"></param>
-        public void AddHexTileVisual(HexCoord hexCoord, string materialName, int layer, Shader shader = null)
+        public void AddHexTileVisual(HexCoord hexCoord, string materialName, Layer layer, Shader shader = null)
         {
             if (!tileVisuals.ContainsKey(layer))
                 tileVisuals[layer] = new();
@@ -81,7 +82,7 @@ namespace StorytellersTable.Renderer
         /// <param name="replaceExistingHexRenderer"></param>
         public void AddFromMapTileRenderer(MapTileRenderer mapTileRenderer, bool replaceExistingHexRenderer = false)
         {
-            foreach ((int layer, var dict) in mapTileRenderer.GetVisualData())
+            foreach ((var layer, var dict) in mapTileRenderer.GetVisualData())
             {
                 // check if this map tile renderer has this layer
                 if (!tileVisuals.TryGetValue(layer, out var _))
@@ -111,7 +112,7 @@ namespace StorytellersTable.Renderer
         /// Removes a HexRenderer, at the given hex coordinate <paramref name="data"/>.
         /// </summary>
         /// <param name="data"></param>
-        public void RemoveVisual(HexCoord hexCoord, int layer)
+        public void RemoveVisual(HexCoord hexCoord, Layer layer)
         {
             if (EntryExists(hexCoord, layer))
             {
@@ -122,7 +123,7 @@ namespace StorytellersTable.Renderer
 
         public void RemoveVisual(MapTileRendererPackage package)
         {
-            foreach ((int layer, HashSet<HexCoord> hexSet) in package.info)
+            foreach ((Layer layer, HashSet<HexCoord> hexSet) in package.info)
             {
                 foreach (HexCoord hexCoord in hexSet)
                     RemoveVisual(hexCoord, layer);
@@ -151,7 +152,7 @@ namespace StorytellersTable.Renderer
         /// <remarks>Highlights tile if <paramref name="enable"/> is True. Disable's highlight otherwise.</remarks>
         /// <param name="datas"></param>
         /// <param name="enable"></param>
-        public void EnableHighlight(HexCoord hexCoord, int layer, bool enable)
+        public void EnableHighlight(HexCoord hexCoord, Layer layer, bool enable)
         {
             if (!EntryExists(hexCoord, layer))
                 return;
@@ -165,7 +166,7 @@ namespace StorytellersTable.Renderer
                 EnableSelectedVisual(data.hexCoord, data.mapLayer, enable);
         }
 
-        public void EnableSelectedVisual(HexCoord hexCoord, int layer, bool enable)
+        public void EnableSelectedVisual(HexCoord hexCoord, Layer layer, bool enable)
         {
             if (!EntryExists(hexCoord, layer))
                 return;
@@ -179,7 +180,7 @@ namespace StorytellersTable.Renderer
                 EnableGhostVisual(data.hexCoord, data.mapLayer, enable);
         }
 
-        public void EnableGhostVisual(HexCoord hexCoord, int layer, bool enable)
+        public void EnableGhostVisual(HexCoord hexCoord, Layer layer, bool enable)
         {
             if (!EntryExists(hexCoord, layer))
                 return;
@@ -205,7 +206,7 @@ namespace StorytellersTable.Renderer
         /// <param name="hexCoordsSet"></param>
         public void DisableAllHighlightsExcept(MapTileRendererPackage package)
         {
-            foreach ((int layer, var dict) in tileVisuals)
+            foreach ((var layer, var dict) in tileVisuals)
             {
                 // check if this layer has tiles to disable highlight
                 if (!package.info.ContainsKey(layer))
@@ -286,7 +287,7 @@ namespace StorytellersTable.Renderer
             }
         }
 
-        private bool EntryExists(HexCoord hexCoord, int layer)
+        private bool EntryExists(HexCoord hexCoord, Layer layer)
         {
             if (!tileVisuals.ContainsKey(layer))
                 return false;
@@ -308,7 +309,7 @@ namespace StorytellersTable.Renderer
         /// Return's the renderer's data.
         /// </summary>
         /// <returns></returns>
-        public Dictionary<int, Dictionary<HexCoord, HexRenderer>> GetVisualData()
+        public Dictionary<Layer, Dictionary<HexCoord, HexRenderer>> GetVisualData()
         {
             return tileVisuals;
         }

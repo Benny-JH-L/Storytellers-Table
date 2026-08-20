@@ -1,5 +1,4 @@
-﻿
-using StorytellersTable.Core.Data;
+﻿using Assets.StorytellersTable.Core.Map;
 using StorytellersTable.Map;
 using StorytellersTable.Renderer;
 using System.Collections.Generic;
@@ -10,11 +9,11 @@ namespace StorytellersTable.Utility
     {
         public static MapTileRendererPackage ToMapTileRendererPackage(UpdateMapInfoPackage package)
         {
-            Dictionary<int, HashSet<HexCoord>> newInfo = new();
+            Dictionary<Layer, HashSet<HexCoord>> newInfo = new();
 
             foreach(TileData data in package.info)
             {
-                int layer = data.mapLayer;
+                Layer layer = data.mapLayer;
                 
                 if (!newInfo.ContainsKey(layer))
                     newInfo[layer] = new();

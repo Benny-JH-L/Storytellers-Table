@@ -1,9 +1,8 @@
-﻿
-using StorytellersTable.Core.Data;
-using StorytellersTable.Utility.Log;
+﻿using StorytellersTable.Utility.Log;
 using StorytellersTable.Renderer;
 using System.Collections.Generic;
 using UnityEngine;
+using Assets.StorytellersTable.Core.Map;
 
 namespace StorytellersTable.Map
 {
@@ -145,7 +144,7 @@ namespace StorytellersTable.Map
         {
             ClearActiveMapVisuals(); // clear the current map visuals before loading new ones
 
-            foreach ((int layer, var value) in mapData.mapTileData.GetTileRepresentation())
+            foreach ((Layer layer, var value) in mapData.mapTileData.GetTileRepresentation())
             {
                 foreach ((HexCoord hex, TileData data) in value)
                 {

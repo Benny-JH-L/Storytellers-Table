@@ -1,9 +1,9 @@
 ﻿
 using System.Collections.Generic;
-using StorytellersTable.Core.Data;
 using UnityEngine;
 using TMPro;
 using System.Linq;
+using Assets.StorytellersTable.Core.Map;
 
 namespace StorytellersTable.Renderer
 {
@@ -122,7 +122,7 @@ namespace StorytellersTable.Renderer
         }
         private float ComputeLabelOffset(TileData tileData)
         {
-            return (_yOffset + (Singleton.Instance.height / 2f) + tileData.mapLayer);
+            return (_yOffset + tileData.mapLayer.Y() + (Singleton.Instance.height / 2f));
         }
 
         /// <summary>

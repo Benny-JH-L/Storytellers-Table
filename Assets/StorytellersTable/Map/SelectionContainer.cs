@@ -1,6 +1,5 @@
-﻿
+﻿using Assets.StorytellersTable.Core.Map;
 using NUnit.Framework.Constraints;
-using StorytellersTable.Core.Data;
 using StorytellersTable.Map;
 using StorytellersTable.Renderer;
 using StorytellersTable.Utility;
