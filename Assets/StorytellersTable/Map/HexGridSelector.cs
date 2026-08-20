@@ -38,7 +38,7 @@ namespace StorytellersTable
             layersBottomUp.AddRange(layers);
 
             layersTopDown.Sort((a, b) => b.CompareTo(a));   // descending
-            layersBottomUp.Sort((a, b) => a.CompareTo(a));  // ascending
+            layersBottomUp.Sort((a, b) => a.CompareTo(b));  // ascending
         }
 
         /// <summary>
