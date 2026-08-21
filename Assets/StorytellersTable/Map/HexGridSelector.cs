@@ -1,7 +1,9 @@
 ﻿using Assets.StorytellersTable.Core.Map;
+using StorytellersTable.Campaign.Modes;
 using StorytellersTable.Map;
 using StorytellersTable.Utility.Log;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,9 +11,15 @@ namespace StorytellersTable
 {
     public struct GridSelectorPayload
     {
-        public HashSet<HexCoord> coords;
-        public Layer activeLayer;
-        public int layerRange;
+        public SelectModeTypes mode;
+        public MapTileRepresentation mapTileRepresentation;
+        public HexCoord initialHexCoord;
+        public Layer initialLayer;
+        public uint layerRange;
+
+        // Specific for mode type
+        public uint radius;     // radial & draw select
+        public AreaEditData areaSelectData; // area select
     }
 
     public class HexGridSelector
@@ -82,36 +90,47 @@ namespace StorytellersTable
         }
 
         /// <summary>
-        /// Uses <paramref name="cam"/> position & mouse raycast to get the active layer, will ignore the same value in <paramref name="payload"/>.
+        /// Uses the <paramref name="cam"/> and mouse position to raycast to get the initial layer and hexcoord. The same values
+        /// in <paramref name="payload"/> will be ignored.
         /// </summary>
         /// <param name="payload"></param>
         /// <param name="cam"></param>
-        public bool PickWithCamera(GridSelectorPayload payload, Camera cam, out List<TileData> result)
+        /// <param name="tileDataResult"></param>
+        /// <param name="coordResult"></param>
+        /// <returns></returns>
+        public bool PickWithCamera(GridSelectorPayload payload, Camera cam, out List<TileData> tileDataResult, out List<HexCoord> coordResult)
         {
-            if (GetLayerFromCameraRaycast(cam, out Layer layer))
+            if (GetLayerFromCameraRaycast(cam, out Layer layer, out HexCoord hitCoord))
             {
-                Layer oldLayer = payload.activeLayer;
+                Layer oldLayer = payload.initialLayer;
+                HexCoord oldHex = payload.initialHexCoord;
 
-                payload.activeLayer = layer;
-                Pick(payload, out result);
+                payload.initialHexCoord = hitCoord;
+                payload.initialLayer = layer;
+                bool isSuccess = Pick(payload, out tileDataResult, out coordResult);
 
-                payload.activeLayer = oldLayer;         // set layer back
-                return true;
+                // Set initial values back
+                payload.initialHexCoord = oldHex;
+                payload.initialLayer = oldLayer;
+                return isSuccess;
             }
 
             // finding a layer with camera raycasting did not succeed
             WarningOut.Log(this, "Could not get layer with Raycast...");
-            result = new();
+            tileDataResult = new();
+            coordResult = new();
             return false;
         }
 
         /// <summary>
-        /// Gets the active layer based on the raycast of the <paramref name="camera"/>.
+        /// Gets the active layer based on the raycast of the <paramref name="camera"/> and mouse position, 
+        /// return's the hexcoord, <paramref name="hexCoord"/>, it hits.
         /// </summary>
         /// <param name="camera"></param>
         /// <param name="result"></param>
+        /// <param name="hexCoord"></param>
         /// <returns></returns>
-        public bool GetLayerFromCameraRaycast(Camera camera, out Layer result)
+        private bool GetLayerFromCameraRaycast(Camera camera, out Layer result, out HexCoord hexCoord)
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             List<Layer> layersToIterateThrough;
@@ -145,32 +164,119 @@ namespace StorytellersTable
                 if (activeMapTileData.EntryExists(layer, candidate))
                 {
                     result = Layer.YToLayer(planeY);
+                    hexCoord = candidate;
                     return true;
                 }
             }
 
             result = default;
+            hexCoord = default;
             return false;
         }
 
         /// <summary>
-        /// Picks tile data's based on <paramref name="payload"/> and returns in <paramref name="result"/>.
+        /// Picks tile data's based on <paramref name="payload"/> and returns in <paramref name="tileDataResult"/>.
         /// </summary>
         /// <param name="payload"></param>
-        /// <param name="result"></param>
-        public void Pick(GridSelectorPayload payload, out List<TileData> result)
+        /// <param name="tileDataResult"></param>
+        /// <param name="coordResult"></param>
+        public bool Pick(GridSelectorPayload payload, out List<TileData> tileDataResult, out List<HexCoord> coordResult)
         {
-            result = new();
-            MapTileRepresentation tileRep = MapManager.Instance.ActiveMapData.mapTileData;
-            int layerMax = payload.activeLayer.Val + payload.layerRange;
-            int layerMin = payload.activeLayer.Val - payload.layerRange;
+            tileDataResult = new();
+            coordResult = new();
 
-            // go through the input and add the "top most" tile data relative to the active layer, between the min and max layers.
-            foreach (HexCoord hexCoord in payload.coords)
+            if (!Validate(payload))
             {
-                tileRep.GetTileDataStack(hexCoord, out List<TileData> datas, layerMax, layerMin);   // get's a "stack" of tile data's between the max and min layers
-                result.Add(datas[0]);   // the first element will be the top most tile betwen the min and max
+                WarningOut.Log(this, "GridSelectorPayload invalid");
+                return false;
             }
+
+            int layerMax = payload.initialLayer.Val + (int)payload.layerRange;
+            int layerMin = payload.initialLayer.Val - (int)payload.layerRange;
+
+            // Based on the selection mode, get initial hex coords
+            HexCoord initialCoord = payload.initialHexCoord;
+            HashSet<HexCoord> initialCoordSet = new() { initialCoord };
+            switch (payload.mode)
+            {
+                case SelectModeTypes.radialSelect:
+                    HexMath.GetHexRingArea(initialCoord, (int)payload.radius, initialCoordSet);
+                    break;
+                case SelectModeTypes.areaSelect:
+                    WarningOut.Log(this, "area select not implemented");
+                    //HexMath.GetAreaAxial();
+                    break;
+                case SelectModeTypes.drawSelect:
+                    HexMath.GetHexRingArea(initialCoord, (int)payload.radius, initialCoordSet);
+                    break;
+                // adds the initial coord into the set (which is done above)
+                case SelectModeTypes.singleSelect:
+                    break;
+            }
+
+            // filter the initial coords based on the edit mode and map data
+            FilterInitialSet(payload.mapTileRepresentation, initialCoordSet);   // set should only contain hexcoords that exist on the map given
+
+            // Go through the coord set and get the "top most" tile data relative to the active layer, between the min and max layers.
+            MapTileRepresentation tileRep = payload.mapTileRepresentation;
+            foreach (HexCoord hexCoord in initialCoordSet)
+            {
+                tileRep.GetTileDataStack(hexCoord, out List<TileData> tileDatas, layerMax, layerMin);
+
+                // the first element will be the top most tile betwen the min and max
+                if (tileDatas.Count > 0)
+                    tileDataResult.Add(tileDatas[0]);
+
+                coordResult.Add(hexCoord);
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Filters the <paramref name="set"/> based on if a hexcoord exists in <paramref name="mapTileRep"/>, regardless of the layer.
+        /// </summary>
+        /// <param name="mapTileRep"></param>
+        /// <param name="set"></param>
+        private void FilterInitialSet(MapTileRepresentation mapTileRep, HashSet<HexCoord> set)
+        {
+            // remove the hexcoords that do not exist in the map data
+            HashSet<HexCoord> removeSet = new ();
+            foreach (HexCoord hexCoord in set)
+            {
+                bool entryFound = false;
+                foreach ((Layer layer, var dict) in mapTileRep.GetTileRepresentation())
+                {
+                    if (mapTileRep.EntryExists(layer, hexCoord))
+                    {
+                        entryFound = true;
+                        break;
+                    }
+                }
+
+                if (!entryFound)
+                    removeSet.Add(hexCoord);
+            }
+
+            // remove coords
+            set.RemoveWhere(hexCoord => removeSet.Contains(hexCoord));
+        }
+
+        /// <summary>
+        /// Validates the payload. Return true if valid, false otherwise.
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        private bool Validate(GridSelectorPayload payload)
+        {
+            if (payload.mapTileRepresentation == null)
+                return false;
+
+            if (payload.initialLayer == null)
+                return false;
+
+            return true;
         }
     }
 }

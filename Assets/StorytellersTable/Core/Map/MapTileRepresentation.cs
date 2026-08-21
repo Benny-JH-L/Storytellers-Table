@@ -50,6 +50,8 @@ namespace Assets.StorytellersTable.Core.Map
             datas.Reverse();
         }
 
+        #region Add/Remove/Update
+
         /// <summary>
         /// Adds a tile to a layer with its given hexcoord contained in <paramref name="data"/>.
         /// </summary>
@@ -109,6 +111,7 @@ namespace Assets.StorytellersTable.Core.Map
             }
         }
 
+        
         public void UpdateTile(TileData data)
         {
             Layer layer = data.mapLayer;
@@ -142,6 +145,7 @@ namespace Assets.StorytellersTable.Core.Map
             foreach (TileData data in package.info)
                 TryRemove(data);
         }
+        #endregion
 
         public bool EntryExists(TileData data)
         {

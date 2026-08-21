@@ -47,6 +47,11 @@ namespace Assets.StorytellersTable.Core.Map
             return Val == other.Val;
         }
 
+        public override string ToString()
+        {
+            return Val.ToString();
+        }
+
         /// <summary>
         /// Converts a y-position, <paramref name="yPos"/>, to the closest layer.
         /// </summary>

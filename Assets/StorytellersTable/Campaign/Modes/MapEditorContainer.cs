@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -16,30 +15,26 @@ using UnityEngine.InputSystem;
 namespace StorytellersTable.Campaign.Modes
 {
     /// <summary>
+    /// Stores data to track the state of area mode
+    /// </summary>
+    [Serializable]
+    public class AreaEditData // move to GridSelectorPayload? -> and make as struct?
+    {
+        public HexCoord AreaEditStart { get; set; }
+        public bool startDefined; // states if `AreaPlaceStart` has been set
+
+        public AreaEditData()
+        {
+            startDefined = false;
+        }
+    }
+
+    /// <summary>
     /// Encapsulates behavior while modifying the map tiles; layout coordinates, layered tile placement, and geometry.
     /// </summary>
     [DisallowMultipleComponent]
     public class MapEditorContainer : MonoBehaviour, ICampaignMode
     {
-        #region private classes
-
-        /// <summary>
-        /// Stores data to track the state of area mode
-        /// </summary>
-        [Serializable]
-        private class AreaEditData
-        {
-            public HexCoord AreaEditStart { get; set; }
-            public bool startDefined; // states if `AreaPlaceStart` has been set
-
-            public AreaEditData()
-            {
-                startDefined = false;
-            }
-        }
-
-        #endregion
-
         public static MapEditorContainer instance;
         private Transform _uiParentTransform => Singleton.Instance.mainCanvas;
         [SerializeField] private MapEditAction _inputMap;
@@ -65,7 +60,8 @@ namespace StorytellersTable.Campaign.Modes
         [SerializeField] public int activeLayer = 0; // when this changes i need to also move the GameObject named "Plane (for mapedit raycasting)" to the same y-pos for better feedback!
                                                      // ^ chages need to be made: keybinds to move camerea up/down to `space bar` and `left-ctrl` respectively, (use left-alt for cam up/down thing) then use q/e to move the active layer down and up respectively
                                                      // i might want to redo the placement, edit, removal logic with the new placement class.
-        [SerializeField] public int layerRange = 2;
+        [SerializeField] public uint layerRange = 2;
+        [SerializeField] public bool layerFocusOn = false;  // toggle to focus editing on a specific layer
 
         private void Awake()
         {
@@ -150,66 +146,151 @@ namespace StorytellersTable.Campaign.Modes
             // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
             temporaryTileContainer.Clear();
 
-            HexCoord mouseHexCoord;
+            #region old codes
+            //HexCoord mouseHexCoord;
 
-            #region Get the mouse hex coord from world pos via plane raycast
+            //#region Get the mouse hex coord from world pos via plane raycast
 
-            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
+            //Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            //var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
 
-            if (!plane.Raycast(ray, out float dist))                                // ray cast to this plane to find the mouse position in world
-                return;
-            
-            mouseHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
-            #endregion
+            //if (!plane.Raycast(ray, out float dist))                                // ray cast to this plane to find the mouse position in world
+            //    return;
 
-            // Add unconfirmed position at mouse position
-            HashSet<HexCoord> unconfirmedHexCoords = new() { mouseHexCoord };
-            MapTileRendererPackage unconfirmedTilePackage = new MapTileRendererPackage() { info = new() };
+            //mouseHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
+            //#endregion
 
-            // TODO: thinking of redoing how hexcoords are chosen for radial, area, and draw -> make it similar to single select and using the grid selector, or have a toggle, whether or not to toggle the `fall through` (with a range) or just only on the desired layer
+            //// Add unconfirmed position at mouse position
+            //HashSet<HexCoord> unconfirmedHexCoords = new() { mouseHexCoord };
+            //MapTileRendererPackage unconfirmedTilePackage = new MapTileRendererPackage() { info = new() };
 
-            // Calculate unconfirmed positions for settings: Radial, Area, and Draw.
-            // Radial
-            if (editModes.SelectionMode == SelectModeTypes.radialSelect)
-            {
-                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, unconfirmedHexCoords);
-            }
-            // Area
-            else if (editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
-            {
-                HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
-            }
-            // Draw (for radius)
-            else if (editModes.SelectionMode == SelectModeTypes.drawSelect)
-            {
-                HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius - 1, unconfirmedHexCoords);    // offset draw radius by 1, so draw radius of 1 means single tile, 2 means 1 tiles from the center.
-            }
-            else if (editModes.SelectionMode == SelectModeTypes.singleSelect)
-            {
-                if (gridSelector.TryPick(activeLayer, out Layer outLayer, out HexCoord outHexCoord, out _))
-                {
-                    unconfirmedTilePackage.info[outLayer] = new() { outHexCoord };
+            //// TODO: thinking of redoing how hexcoords are chosen for radial, area, and draw -> make it similar to single select and using the grid selector, or have a toggle, whether or not to toggle the `fall through` (with a range) or just only on the desired layer
 
-                    //DebugOut.Log(this, "out: " + outHexCoord + " outlayer: " + outLayer);
-                }
-            }
+            //// Calculate unconfirmed positions for settings: Radial, Area, and Draw.
+            //// Radial
+            //if (editModes.SelectionMode == SelectModeTypes.radialSelect)
+            //{
+            //    HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, unconfirmedHexCoords);
+            //}
+            //// Area
+            //else if (editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
+            //{
+            //    HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
+            //}
+            //// Draw (for radius)
+            //else if (editModes.SelectionMode == SelectModeTypes.drawSelect)
+            //{
+            //    HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius - 1, unconfirmedHexCoords);    // offset draw radius by 1, so draw radius of 1 means single tile, 2 means 1 tiles from the center.
+            //}
+            //else if (editModes.SelectionMode == SelectModeTypes.singleSelect)
+            //{
+            //    if (gridSelector.TryPick(activeLayer, out Layer outLayer, out HexCoord outHexCoord, out _))
+            //    {
+            //        unconfirmedTilePackage.info[outLayer] = new() { outHexCoord };
+
+            //        //DebugOut.Log(this, "out: " + outHexCoord + " outlayer: " + outLayer);
+            //    }
+            //}
 
             //GridSelectorPayload gridSelectorPay = new GridSelectorPayload() { coords = unconfirmedHexCoords, activeLayer = new Layer(activeLayer), layerRange = layerRange };
-            //gridSelector.PickWithCamera(gridSelectorPay, Camera.main, out List<TileData> tileDataPicked);
+            //if (gridSelector.PickWithCamera(gridSelectorPay, Camera.main, out List<TileData> tileDataPicked))
+            //{
+            //
+            //}
+
+            // TODO: Maybe i should have a toggle: layer based tile placement-> if on, places tiles only at that layer.
+            // if off:
+            // - only places tiles atop of existing tiles
 
             // filter out hexcoords based on the active edit mode
             //DebugOut.Log(this, "before filter:");
             //Printer.Print(unconfirmedTilePackage.info);
 
-            unconfirmedTilePackage.info[new Layer(activeLayer)] = unconfirmedHexCoords;
-            FilterOutHexcoords(unconfirmedTilePackage);
+            //unconfirmedTilePackage.info[new Layer(activeLayer)] = unconfirmedHexCoords;
+            //FilterOutHexcoords(unconfirmedTilePackage);
 
-            //DebugOut.Log(this, "after filter:");
-            //Printer.Print(unconfirmedTilePackage.info);
+            ////DebugOut.Log(this, "after filter:");
+            ////Printer.Print(unconfirmedTilePackage.info);
 
-            // create packages to update visuals & values
-            CreatePackage(unconfirmedTilePackage, out UpdateMapInfoPackage mapInfoPackage);
+            //// create packages to update visuals & values
+            //CreatePackage(unconfirmedTilePackage, out UpdateMapInfoPackage mapInfoPackage);
+            #endregion
+
+            // return if in the deselect state for tile placement
+            if (!selectOn && editModes.IsTilePlaceOn())
+                return;
+
+            // Create the grid selector's payload
+            GridSelectorPayload gridSelecPayload = new() { };
+            gridSelecPayload.mode = editModes.SelectionMode;
+            gridSelecPayload.layerRange = layerRange;
+            gridSelecPayload.radius = (editModes.SelectionMode == SelectModeTypes.radialSelect) ? ModeManager.mapEditSettings.radius : ModeManager.mapEditSettings.drawRadius - 1;
+            gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
+
+            // area select stuff here...
+
+            //if (selectOn)
+            //{
+            //    // tile placement
+            //    if (editModes.IsTilePlaceOn())
+            //        gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
+            //    // removal and edit modes
+            //    else
+            //    {
+            //        gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
+            //    }
+            //}
+            //else
+            //{
+            //    // return if in the deselect state for tile placement
+            //    if (editModes.IsTilePlaceOn())
+            //        return;
+            //}
+
+            // Results of gridselector
+            List<TileData> tileDataResult;
+            List<HexCoord> coordResult;
+
+            // pick on a specific layer
+            if (layerFocusOn)
+            {
+                #region Get the mouse hex coord from world pos via plane raycast
+                Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+                var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
+
+                if (!plane.Raycast(ray, out float dist))                                // ray cast to this plane to find the mouse position in world
+                    return;
+                #endregion
+
+                gridSelecPayload.initialHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
+                gridSelecPayload.initialLayer = new Layer(activeLayer);
+                gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult);
+
+                // Update the ... so that new tiles are placed on the focused layer
+            }
+            // pick based on camera
+            else
+            {
+                gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult);
+
+                // Update the TileData for placement mode so that new tiles are placed atop of existing ones
+                if (editModes.IsTilePlaceOn())
+                {
+                    List<TileData> tmp = new();
+                    foreach (TileData tileData in tileDataResult)
+                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), tileData.materialId));
+                    
+                    // Add the new results
+                    tileDataResult.Clear();
+                    tileDataResult.AddRange(tmp);
+                }
+            }
+
+            // Create payloads from gridselector
+            UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage() { info = tileDataResult.ToHashSet() };
+
+            // need filtering for removal/editing... here (filter out the tiles that do not exist in the confirmed tiles
+
 
             #region handle select/deselect states
             // Handle select state
@@ -271,21 +352,21 @@ namespace StorytellersTable.Campaign.Modes
                     // Area mode check
                     if (editModes.SelectionMode == SelectModeTypes.areaSelect)
                     {
-                        // Set the starting position
-                        if (!areaEditData.startDefined)
-                        {
-                            areaEditData.AreaEditStart = mouseHexCoord;
-                            areaEditData.startDefined = true;
-                        }
-                        // Deselect the start if clicked again
-                        else if (areaEditData.startDefined && areaEditData.AreaEditStart == mouseHexCoord)
-                            areaEditData.startDefined = false;
-                        // Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
-                        else
-                        {
-                            PlaceTmpTiles();
-                            areaEditData.startDefined = false;
-                        }
+                        //// Set the starting position
+                        //if (!areaEditData.startDefined)
+                        //{
+                        //    areaEditData.AreaEditStart = mouseHexCoord;
+                        //    areaEditData.startDefined = true;
+                        //}
+                        //// Deselect the start if clicked again
+                        //else if (areaEditData.startDefined && areaEditData.AreaEditStart == mouseHexCoord)
+                        //    areaEditData.startDefined = false;
+                        //// Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
+                        //else
+                        //{
+                        //    PlaceTmpTiles();
+                        //    areaEditData.startDefined = false;
+                        //}
                     }
                     else
                     {

@@ -7,10 +7,10 @@ public class MapEditSO : ScriptableObject
 {
     [Header("Radial Selection")]
     [Range(1, 10)]
-    [SerializeField] public int radius = 3;
+    [SerializeField] public uint radius = 3;
 
     [Header("Draw Selection")]
     [Range(1, 10)]
-    [SerializeField] public int drawRadius = 2;
+    [SerializeField] public uint drawRadius = 2;
 }
 

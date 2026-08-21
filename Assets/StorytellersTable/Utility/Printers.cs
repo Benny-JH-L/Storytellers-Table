@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Assets.StorytellersTable.Core.Map;
+using StorytellersTable.Map;
+using StorytellersTable.Renderer;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace StorytellersTable.Utility.Printer
@@ -22,6 +25,26 @@ namespace StorytellersTable.Utility.Printer
             {
                 s += $"[{i}: ";
                 foreach (var hexCoord in hashSet) 
+                    s += hexCoord.ToString() + ", ";
+                s += "], \n";
+            }
+            s += "}";
+            Debug.Log(s);
+        }
+
+        public static void Print(UpdateMapInfoPackage updateMapInfoPackage)
+        {
+            Printer.Print(Conversion.ToMapTileRendererPackage(updateMapInfoPackage));
+        }
+
+        public static void Print(MapTileRendererPackage mapTileRendererPackage)
+        {
+            string s = "{\n";
+            var dict = mapTileRendererPackage.info;
+            foreach ((Layer i, var hashSet) in dict)
+            {
+                s += $"[{i}: ";
+                foreach (var hexCoord in hashSet)
                     s += hexCoord.ToString() + ", ";
                 s += "], \n";
             }
