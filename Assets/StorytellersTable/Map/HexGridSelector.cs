@@ -179,7 +179,7 @@ namespace StorytellersTable
 
             if (hitFound)
             {
-                DebugOut.Log(this, $"Selected Layer: {layerResult} @ Coord: {hexCoordResult} (Ray Distance: {minRayDistance})");
+                //DebugOut.Log(this, $"Selected Layer: {layerResult} @ Coord: {hexCoordResult} (Ray Distance: {minRayDistance})");
                 return true;
             }
 

@@ -62,6 +62,7 @@ namespace StorytellersTable.Campaign.Modes
                                                      // i might want to redo the placement, edit, removal logic with the new placement class.
         [SerializeField] public uint layerRange = 2;
         [SerializeField] public bool layerFocusOn = false;  // toggle to focus editing on a specific layer
+        [SerializeField] public bool surfaceFocusOn = false;    // toggle to focus selecting the surface for edit/remove
 
         private void Awake()
         {
@@ -229,27 +230,10 @@ namespace StorytellersTable.Campaign.Modes
 
             // TODO: area select stuff here...
 
-            //if (selectOn)
-            //{
-            //    // tile placement
-            //    if (editModes.IsTilePlaceOn())
-            //        gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
-            //    // removal and edit modes
-            //    else
-            //    {
-            //        gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
-            //    }
-            //}
-            //else
-            //{
-            //    // return if in the deselect state for tile placement
-            //    if (editModes.IsTilePlaceOn())
-            //        return;
-            //}
-
             // Results of gridselector
             HashSet<TileData> tileDataResult;
             HashSet<HexCoord> coordResult;
+            bool pickSuccessful = false;
 
             // pick on a specific layer
             if (layerFocusOn)
@@ -265,19 +249,29 @@ namespace StorytellersTable.Campaign.Modes
 
                 gridSelecPayload.initialHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
                 gridSelecPayload.initialLayer = new Layer(activeLayer);
-                gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult);
+                pickSuccessful = gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult);
+
+                if (!pickSuccessful)
+                    return;
 
                 // Update the ... so that new tiles are placed on the focused layer
+                if (editModes.IsTilePlaceOn())
+                {
+
+                }
             }
-            // pick based on camera
+            // pick with camera (dynamic)
             else
             {
-                bool bVal = gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult, out GridSelectorPayload updatedPayload);
+                pickSuccessful = gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult, out GridSelectorPayload updatedPayload);
+                
+                if (!pickSuccessful)
+                    return;
 
-                // Update the TileData for placement mode so that new tiles are placed atop of existing ones
-                if (bVal && editModes.IsTilePlaceOn())
+                // Get surface tiles
+                if (surfaceFocusOn || editModes.IsTilePlaceOn())
                 {
-                    // We don't care what the grid selector chose as we will use `coordResult` to get the data we want for this placement mode
+                    // We don't care what the grid selector chose as we will use `coordResult` to get the 'top most' tiles
                     tileDataResult.Clear();
 
                     var tileRep = updatedPayload.mapTileRepresentation;
@@ -293,7 +287,11 @@ namespace StorytellersTable.Campaign.Modes
                         if (tileDatas.Count > 0)
                             tileDataResult.Add(tileDatas[0]);
                     }
+                }
 
+                // Update the TileData for placement mode so that new tiles are placed atop of existing ones
+                if (editModes.IsTilePlaceOn())
+                {
                     HashSet<TileData> tmp = new();
                     foreach (TileData tileData in tileDataResult)
                         tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialName));
@@ -305,10 +303,7 @@ namespace StorytellersTable.Campaign.Modes
             }
 
             // Create payloads from gridselector
-            UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage() { info = tileDataResult.ToHashSet() };
-
-            // TODO: need filtering for removal/editing... here (filter out the tiles that do not exist in the confirmed tiles
-
+            UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage() { info = tileDataResult };
 
             #region handle select/deselect states
             // Handle select state
@@ -329,6 +324,9 @@ namespace StorytellersTable.Campaign.Modes
                 // return if in the deselect state for tile placement
                 if (editModes.IsTilePlaceOn())
                     return;
+
+                // Filtering for removal/editing, filter out the tiles that do not exist in the confirmed tiles (want to show selection for selected tiles)
+                tileDataResult.RemoveWhere(data => !selectionContainer.ConfirmedTiles.EntryExists(data));
 
                 selectionContainer.AddUnconfirmed(mapInfoPackage);
             }
