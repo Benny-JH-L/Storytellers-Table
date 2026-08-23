@@ -18,6 +18,7 @@ namespace StorytellersTable
         public Layer initialLayer;
         public uint layerRange;
         public bool layerFocus; // focus selection on `initialLayer`, disables dynamic layer selection
+        public bool filterWithMapRep;   // true: filters results out if it exists in `mapTileRepresentation`
 
         // Specific for mode type
         public uint radius;     // radial & draw select
@@ -234,9 +235,10 @@ namespace StorytellersTable
             // filter the initial coords based on the edit mode and map data
             //Printer.Print(initialCoordSet.ToList(), "before: ");  // debug
 
-            // TODO: Add hex coords from the range -> ???
+            // TODO: Add hex coords from the range???
 
-            FilterInitialSet(payload.mapTileRepresentation, initialCoordSet);   // set should only contain hexcoords that exist on the given map 
+            if (payload.filterWithMapRep)
+                FilterInitialSet(payload.mapTileRepresentation, initialCoordSet);   // set should only contain hexcoords that exist on the given map 
             pickedHexCoords.UnionWith(initialCoordSet); // add set to result
 
             //Printer.Print(coordResult.ToList(), "after: ");  // debug
@@ -264,9 +266,11 @@ namespace StorytellersTable
         {
             // remove the hexcoords that do not exist in the map data
             HashSet<HexCoord> removeSet = new();
+            // Go through each coord
             foreach (HexCoord hexCoord in set)
             {
                 bool entryFound = false;
+                // check if that coord exists in any layer
                 foreach ((Layer layer, var dict) in mapTileRep.GetTileRepresentation())
                 {
                     if (mapTileRep.EntryExists(layer, hexCoord))
@@ -276,6 +280,7 @@ namespace StorytellersTable
                     }
                 }
 
+                // if the coord does not exist in any layer, remove it
                 if (!entryFound)
                     removeSet.Add(hexCoord);
             }

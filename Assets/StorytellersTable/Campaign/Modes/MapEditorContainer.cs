@@ -36,33 +36,35 @@ namespace StorytellersTable.Campaign.Modes
     public class MapEditorContainer : MonoBehaviour, ICampaignMode
     {
         public static MapEditorContainer instance;
-        private Transform _uiParentTransform => Singleton.Instance.mainCanvas;
-        [SerializeField] private MapEditAction _inputMap;
-
+        [SerializeField] private MapEditAction _inputMap;   // keybinds
         private MapData ActiveMapData => MapManager.Instance.ActiveMapData;
         private CampaignModeManager ModeManager => CampaignModeManager.Instance;
+        private Transform _uiParentTransform => Singleton.Instance.mainCanvas;
 
-        private readonly AreaEditData areaEditData = new AreaEditData();
-        public readonly ModeContainer editModes = new ModeContainer();
-        private bool selectOn = true;  // selection/deselction state
 
-        [SerializeField] MapEditorUIManager mapEditorUI;    // map editor's own UI
-
-        private TileEditContainer TileEditMode => TileEditContainer.instance;   // handles UI for tile data editing by the user
+        private HexGridSelector gridSelector = new();           // handles map grid coordinate selection
         private SelectionContainer selectionContainer;          // handles tile selection unconfirmed & confirmed tracking, and relavent visual states.
         private TemporaryTileContainer temporaryTileContainer;  // utilized by placement mode
-        private HexGridSelector gridSelector = new();
+        private TileEditContainer TileEditMode => TileEditContainer.instance;   // handles UI for tile data editing by the user
+        public readonly ModeContainer editModes = new ModeContainer();
+        private readonly AreaEditData areaEditData = new AreaEditData();
+
+        
+        [SerializeField] MapEditorUIManager mapEditorUI;    // map editor's own UI
 
 
-        // values edit by the UI
-        public string placementMaterialName = MaterialLoader.instance.defaultMaterialName;
+        #region values edit by the UI/keybinds ----
+        public string placementMaterialId = MaterialLoader.instance.defaultMaterialName;
 
-        [SerializeField] public int activeLayer = 0; // when this changes i need to also move the GameObject named "Plane (for mapedit raycasting)" to the same y-pos for better feedback!
-                                                     // ^ chages need to be made: keybinds to move camerea up/down to `space bar` and `left-ctrl` respectively, (use left-alt for cam up/down thing) then use q/e to move the active layer down and up respectively
-                                                     // i might want to redo the placement, edit, removal logic with the new placement class.
+        [SerializeField] public int activeLayer = 0; // chages need to be made: keybinds to move camerea up/down to `space bar` and `left-ctrl` respectively, (use caps-lock for cam up/down thing) then use q/e to move the active layer down and up respectively
+        [Range(0, 5)]
         [SerializeField] public uint layerRange = 2;
-        [SerializeField] public bool layerFocusOn = false;  // toggle to focus editing on a specific layer
-        [SerializeField] public bool surfaceFocusOn = false;    // toggle to focus selecting the surface for edit/remove
+        [SerializeField] public bool layerFocusOn = false;      // toggle to focus editing/placeing on a specific layer (overrides surfaceFocusOn)
+        [SerializeField] public bool surfaceFocusOn = false;    // toggle to focus selecting the surface for edit/remove (this is always on for dynamic tile placement)
+        [SerializeField] private bool selectOn = true;          // selection/deselction state
+
+        #endregion values edit by the UI end/keybinds ----
+
 
         private void Awake()
         {
@@ -95,11 +97,8 @@ namespace StorytellersTable.Campaign.Modes
             // Add callbacks to toggle between tile/label edit, remove, and placement
             _inputMap.Edit.ToggleTileMode.performed += editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedSelection;
-
             _inputMap.Edit.ToggleEdit.performed += editModes.ToggleEdit;
-
             _inputMap.Edit.TogglePlace.performed += editModes.TogglePlace;
-
             _inputMap.Edit.ToggleRemove.performed += editModes.ToggleRemove;
             // other call backs to input map...
         }
@@ -147,86 +146,18 @@ namespace StorytellersTable.Campaign.Modes
             // Destory current unconfirmed tiles so we can set new ones relative to the new mouse position
             temporaryTileContainer.Clear();
 
-            #region old codes
-            //HexCoord mouseHexCoord;
-
-            //#region Get the mouse hex coord from world pos via plane raycast
-
-            //Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            //var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
-
-            //if (!plane.Raycast(ray, out float dist))                                // ray cast to this plane to find the mouse position in world
-            //    return;
-
-            //mouseHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
-            //#endregion
-
-            //// Add unconfirmed position at mouse position
-            //HashSet<HexCoord> unconfirmedHexCoords = new() { mouseHexCoord };
-            //MapTileRendererPackage unconfirmedTilePackage = new MapTileRendererPackage() { info = new() };
-
-            //// TODO: thinking of redoing how hexcoords are chosen for radial, area, and draw -> make it similar to single select and using the grid selector, or have a toggle, whether or not to toggle the `fall through` (with a range) or just only on the desired layer
-
-            //// Calculate unconfirmed positions for settings: Radial, Area, and Draw.
-            //// Radial
-            //if (editModes.SelectionMode == SelectModeTypes.radialSelect)
-            //{
-            //    HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.radius, unconfirmedHexCoords);
-            //}
-            //// Area
-            //else if (editModes.SelectionMode == SelectModeTypes.areaSelect && areaEditData.startDefined)
-            //{
-            //    HexMath.GetAreaAxial(areaEditData.AreaEditStart, mouseHexCoord, unconfirmedHexCoords);
-            //}
-            //// Draw (for radius)
-            //else if (editModes.SelectionMode == SelectModeTypes.drawSelect)
-            //{
-            //    HexMath.GetHexRingArea(mouseHexCoord, ModeManager.mapEditSettings.drawRadius - 1, unconfirmedHexCoords);    // offset draw radius by 1, so draw radius of 1 means single tile, 2 means 1 tiles from the center.
-            //}
-            //else if (editModes.SelectionMode == SelectModeTypes.singleSelect)
-            //{
-            //    if (gridSelector.TryPick(activeLayer, out Layer outLayer, out HexCoord outHexCoord, out _))
-            //    {
-            //        unconfirmedTilePackage.info[outLayer] = new() { outHexCoord };
-
-            //        //DebugOut.Log(this, "out: " + outHexCoord + " outlayer: " + outLayer);
-            //    }
-            //}
-
-            //GridSelectorPayload gridSelectorPay = new GridSelectorPayload() { coords = unconfirmedHexCoords, activeLayer = new Layer(activeLayer), layerRange = layerRange };
-            //if (gridSelector.PickWithCamera(gridSelectorPay, Camera.main, out List<TileData> tileDataPicked))
-            //{
-            //
-            //}
-
-            // TODO: Maybe i should have a toggle: layer based tile placement-> if on, places tiles only at that layer.
-            // if off:
-            // - only places tiles atop of existing tiles
-
-            // filter out hexcoords based on the active edit mode
-            //DebugOut.Log(this, "before filter:");
-            //Printer.Print(unconfirmedTilePackage.info);
-
-            //unconfirmedTilePackage.info[new Layer(activeLayer)] = unconfirmedHexCoords;
-            //FilterOutHexcoords(unconfirmedTilePackage);
-
-            ////DebugOut.Log(this, "after filter:");
-            ////Printer.Print(unconfirmedTilePackage.info);
-
-            //// create packages to update visuals & values
-            //CreatePackage(unconfirmedTilePackage, out UpdateMapInfoPackage mapInfoPackage);
-            #endregion
-
             // return if in the deselect state for tile placement
             if (!selectOn && editModes.IsTilePlaceOn())
                 return;
 
             // Create the grid selector's payload
-            GridSelectorPayload gridSelecPayload = new() { };
-            gridSelecPayload.mode = editModes.SelectionMode;
-            gridSelecPayload.layerRange = layerRange;
-            gridSelecPayload.radius = (editModes.SelectionMode == SelectModeTypes.radialSelect) ? ModeManager.mapEditSettings.radius : ModeManager.mapEditSettings.drawRadius - 1;
-            gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
+            GridSelectorPayload gridSelecPayload = new() {
+                mode = editModes.SelectionMode,
+                layerRange = layerRange,
+                radius = (editModes.SelectionMode == SelectModeTypes.radialSelect) ? ModeManager.mapEditSettings.radius : ModeManager.mapEditSettings.drawRadius - 1,
+                mapTileRepresentation = ActiveMapData.mapTileData,
+                filterWithMapRep = true
+            };
 
             // TODO: area select stuff here...
 
@@ -238,26 +169,45 @@ namespace StorytellersTable.Campaign.Modes
             // pick on a specific layer
             if (layerFocusOn)
             {
-                // TODO: <this section>
                 #region Get the mouse hex coord from world pos via plane raycast
+
                 Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
                 var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
 
-                if (!plane.Raycast(ray, out float dist))                                // ray cast to this plane to find the mouse position in world
+                if (!plane.Raycast(ray, out float dist))                                // raycast to this plane to find the mouse position in world
                     return;
                 #endregion
 
-                gridSelecPayload.initialHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));               // convert the world position found to hex coord
+                // convert the world position found to hex coord
+                gridSelecPayload.initialHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));
                 gridSelecPayload.initialLayer = new Layer(activeLayer);
+                // placing tiles in unoccupied spaces on a fixed layer, don't filter out results with map data
+                gridSelecPayload.filterWithMapRep = (editModes.IsTilePlaceOn()) ? false : true;
+
                 pickSuccessful = gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult);
 
                 if (!pickSuccessful)
                     return;
 
-                // Update the ... so that new tiles are placed on the focused layer
+                // Generate tiles for placement
                 if (editModes.IsTilePlaceOn())
                 {
+                    tileDataResult.Clear();
+                    var tileRep = gridSelecPayload.mapTileRepresentation;
+                    Layer focusLayer = gridSelecPayload.initialLayer;
 
+                    //Printer.Print(coordResult, "pick result:");   // debug
+                    // Generate tiles
+                    foreach (HexCoord hexCoord in coordResult)
+                    {
+                        // don't generate tile if one exists at the map's position already
+                        if (tileRep.EntryExists(focusLayer, hexCoord))
+                            continue;
+
+                        // add generated tile
+                        tileDataResult.Add(new TileData(hexCoord, focusLayer, placementMaterialId));
+                    }
+                    //Printer.Print(tileDataResult, "placement: ");  // debug
                 }
             }
             // pick with camera (dynamic)
@@ -294,11 +244,11 @@ namespace StorytellersTable.Campaign.Modes
                 {
                     HashSet<TileData> tmp = new();
                     foreach (TileData tileData in tileDataResult)
-                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialName));
+                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialId));
                     
                     // Add the new results
                     tileDataResult.Clear();         // clear tmp data
-                    tileDataResult.UnionWith(tmp);   // add the actual data
+                    tileDataResult.UnionWith(tmp);  // add the actual data
                 }
             }
 
@@ -400,6 +350,9 @@ namespace StorytellersTable.Campaign.Modes
         /// <summary>
         /// Filters the information in <paramref name="package"/> based on the current active modes.
         /// </summary>
+        /// <remarks>
+        /// [DEPRECATED]
+        /// </remarks>
         /// <param name="package"></param>
         private void FilterOutHexcoords(MapTileRendererPackage package)
         {
@@ -454,11 +407,15 @@ namespace StorytellersTable.Campaign.Modes
             }
         }
 
-        
+
         /// <summary>
         /// Generates a <paramref name="package"/> from <paramref name="mapTileRendererPackage"/>. Uses the active map data to get TileData, if an entry does not exist, 
         /// a new TileData at the `activeLayer` and hexcoord will be created.
         /// </summary>
+        /// 
+        /// <remarks>
+        /// [DEPRECATED]
+        /// </remarks>
         /// <param name="mapTileRendererPackage"></param>
         /// <param name="package"></param>
         private void CreatePackage(MapTileRendererPackage mapTileRendererPackage, out UpdateMapInfoPackage package)
@@ -473,7 +430,7 @@ namespace StorytellersTable.Campaign.Modes
                     if (activeTileData.EntryExists(layer, hexCoord))
                         package.info.Add(activeTileData.GetTileRepresentation()[layer][hexCoord]);
                     else
-                        package.info.Add(new TileData(hexCoord, activeLayer, placementMaterialName));
+                        package.info.Add(new TileData(hexCoord, activeLayer, placementMaterialId));
                 }                
             }
         }

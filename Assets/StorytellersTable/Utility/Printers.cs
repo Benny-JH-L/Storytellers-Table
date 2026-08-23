@@ -2,6 +2,7 @@
 using StorytellersTable.Map;
 using StorytellersTable.Renderer;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace StorytellersTable.Utility.Printer
@@ -16,6 +17,11 @@ namespace StorytellersTable.Utility.Printer
                 s += item.ToString() + ", ";
             }
             Debug.Log(s);
+        }
+
+        public static void Print<T>(HashSet<T> set, string prepend = "")
+        {
+            Print(set.ToList(), prepend);
         }
 
         public static void Print(Dictionary<int, HashSet<HexCoord>> dict)
