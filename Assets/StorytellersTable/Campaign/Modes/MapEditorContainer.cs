@@ -227,7 +227,7 @@ namespace StorytellersTable.Campaign.Modes
             gridSelecPayload.radius = (editModes.SelectionMode == SelectModeTypes.radialSelect) ? ModeManager.mapEditSettings.radius : ModeManager.mapEditSettings.drawRadius - 1;
             gridSelecPayload.mapTileRepresentation = ActiveMapData.mapTileData;
 
-            // area select stuff here...
+            // TODO: area select stuff here...
 
             //if (selectOn)
             //{
@@ -248,12 +248,13 @@ namespace StorytellersTable.Campaign.Modes
             //}
 
             // Results of gridselector
-            List<TileData> tileDataResult;
-            List<HexCoord> coordResult;
+            HashSet<TileData> tileDataResult;
+            HashSet<HexCoord> coordResult;
 
             // pick on a specific layer
             if (layerFocusOn)
             {
+                // TODO: <this section>
                 #region Get the mouse hex coord from world pos via plane raycast
                 Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
                 var plane = new Plane(Vector3.up, new Vector3(0f, activeLayer, 0f));    // create a plane based on the `activeLayer`
@@ -271,25 +272,42 @@ namespace StorytellersTable.Campaign.Modes
             // pick based on camera
             else
             {
-                gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult);
+                bool bVal = gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult, out GridSelectorPayload updatedPayload);
 
                 // Update the TileData for placement mode so that new tiles are placed atop of existing ones
-                if (editModes.IsTilePlaceOn())
+                if (bVal && editModes.IsTilePlaceOn())
                 {
-                    List<TileData> tmp = new();
+                    // We don't care what the grid selector chose as we will use `coordResult` to get the data we want for this placement mode
+                    tileDataResult.Clear();
+
+                    var tileRep = updatedPayload.mapTileRepresentation;
+                    int layerMax = updatedPayload.initialLayer.Val + (int)updatedPayload.layerRange;
+                    int layerMin = updatedPayload.initialLayer.Val - (int)updatedPayload.layerRange;
+
+                    // Get tile data based on HexGridSelector output
+                    foreach (HexCoord hexCoord in coordResult)
+                    {
+                        tileRep.GetTileDataStack(hexCoord, out List<TileData> tileDatas, layerMax, layerMin);
+
+                        // the first element will be the top most tile betwen the min and max
+                        if (tileDatas.Count > 0)
+                            tileDataResult.Add(tileDatas[0]);
+                    }
+
+                    HashSet<TileData> tmp = new();
                     foreach (TileData tileData in tileDataResult)
-                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), tileData.materialId));
+                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialName));
                     
                     // Add the new results
-                    tileDataResult.Clear();
-                    tileDataResult.AddRange(tmp);
+                    tileDataResult.Clear();         // clear tmp data
+                    tileDataResult.UnionWith(tmp);   // add the actual data
                 }
             }
 
             // Create payloads from gridselector
             UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage() { info = tileDataResult.ToHashSet() };
 
-            // need filtering for removal/editing... here (filter out the tiles that do not exist in the confirmed tiles
+            // TODO: need filtering for removal/editing... here (filter out the tiles that do not exist in the confirmed tiles
 
 
             #region handle select/deselect states
@@ -592,10 +610,10 @@ namespace StorytellersTable.Campaign.Modes
         #region hex visual generation
         public static HexRenderer GenerateHexRenderer(HexCoord hexCoord, Material mat, Layer layer)
         {
-            HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r})", typeof(HexRenderer)).GetComponent<HexRenderer>();
+            HexRenderer hexRenderer = new GameObject($"Hex ({hexCoord.q},{hexCoord.r}) L{layer}", typeof(HexRenderer)).GetComponent<HexRenderer>();
             // Set up where the visual's position in the world
             Vector3 pos = HexMath.GetPositionFromAxial(hexCoord);
-            pos.y += layer.Y(); // offset by layer
+            pos.y += layer.Y() - (Singleton.Instance.height / 2f); // offset by layer. ensure the tile surface is along the layer
             hexRenderer.transform.position = pos;
 
             // Set up HexRenderer

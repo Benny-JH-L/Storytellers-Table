@@ -12,13 +12,12 @@ namespace Assets.StorytellersTable.Core.Map
         }
 
         /// <summary>
-        /// Return's the y-position of this layer. (Position of tile surface visual on this layer).
+        /// Return's the y-position of this layer. This layer's "surface".
         /// </summary>
         /// <returns></returns>
-        public int Y()
+        public float Y()
         {
-            //return this.Val * Singleton.Instance.height;
-            return (int)(this.Val * Singleton.Instance.height + (Singleton.Instance.height / 2f));
+            return this.Val * Singleton.Instance.height + (Singleton.Instance.height / 2f);
         }
 
         public override int GetHashCode()
@@ -59,7 +58,7 @@ namespace Assets.StorytellersTable.Core.Map
         /// <returns></returns>
         public static Layer YToLayer(float yPos)
         {
-            return new Layer((int)Mathf.Round(yPos / Singleton.Instance.height));
+            return new Layer((int)Mathf.Floor((yPos - (Singleton.Instance.height / 2f)) / Singleton.Instance.height));
         }
 
         public static Layer operator +(Layer a, Layer b)

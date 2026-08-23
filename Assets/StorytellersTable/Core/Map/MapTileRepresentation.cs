@@ -1,5 +1,6 @@
 ﻿
 using StorytellersTable.Map;
+using StorytellersTable.Utility.Log;
 using System.Collections.Generic;
 
 namespace Assets.StorytellersTable.Core.Map
@@ -18,6 +19,51 @@ namespace Assets.StorytellersTable.Core.Map
         public MapTileRepresentation()
         {
             dictTileDatas = new();
+        }
+
+        public TileData this[Layer layer, HexCoord hexCoord]
+        {
+            get
+            {
+                if (!EntryExists(layer, hexCoord))
+                {
+                    ErrorOut.Log(this, $"No such entry exists at: Layer<{layer}> HexCoord<{hexCoord}>");
+                    return null;
+                }
+
+                return dictTileDatas[layer][hexCoord];
+            }
+            set
+            {
+                if (layer == null)
+                    ErrorOut.Log(this, "INVALID KEY: Layer is null");
+                if (hexCoord == null)
+                    ErrorOut.Log(this, "INVALID KEY: HexCoord is null");
+                if (!EntryExists(layer, hexCoord))
+                    ErrorOut.Log(this, $"Entry does not exist at: Layer<{layer}> HexCoord<{hexCoord}>");
+                else 
+                    dictTileDatas[layer][hexCoord] = value;
+            }
+        }
+
+        /// <summary>
+        /// Try's to get the value located at <paramref name="layer"/> and <paramref name="hexCoord"/>. 
+        /// Return's true if successful, false otherwise.
+        /// </summary>
+        /// <param name="layer"></param>
+        /// <param name="hexCoord"></param>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        public bool TryGet(Layer layer, HexCoord hexCoord, out TileData result)
+        {
+            if (EntryExists(layer, hexCoord))
+            {
+                result = dictTileDatas[layer][hexCoord];
+                return true;
+            }
+
+            result = default;
+            return false;
         }
 
         /// <summary>
@@ -161,6 +207,10 @@ namespace Assets.StorytellersTable.Core.Map
             return true;
         }
 
+        /// <summary>
+        /// TO BE DEPRECATED!
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<Layer, Dictionary<HexCoord, TileData>> GetTileRepresentation()
         {
             return dictTileDatas;
