@@ -107,13 +107,20 @@ namespace StorytellersTable
         /// <summary>
         /// Calculates all hex coordinates between <paramref name="start"/> and <paramref name="end"/>, based on axial coordinates q, r.
         /// </summary>
+        /// 
+        /// <remarks>
+        /// If <paramref name="start"/> and <paramref name="end"/> are the same, <paramref name="results"/> will store <paramref name="start"/>.
+        /// </remarks>
         /// <param name="start">The starting axial coordinate. Must be different from <paramref name="end"/>.</param>
         /// <param name="end">The ending axial coordinate. Must be different from <paramref name="start"/>.</param>
         /// <param name="results">A pre-allocated list to store the resulting coordinates.</param>
         public static void GetAreaAxial(HexCoord start, HexCoord end, HashSet<HexCoord> results)
         {
             if (start == end)
+            {
+                results.Add(start);
                 return;
+            }
 
             // define boundry of the area, regardless of where start and end are located from each other
             int minQ = Mathf.Min(start.q, end.q);
