@@ -343,6 +343,11 @@ namespace StorytellersTable.Campaign.Modes
             return IsTileRmvOn() || IsTLabelRmvOn();
         }
 
+        public bool IsAreaOn()
+        {
+            return SelectionMode == SelectModeTypes.areaSelect;
+        }
+
         /// <summary>
         /// Returns a copy of the edit mode history.
         /// </summary>
