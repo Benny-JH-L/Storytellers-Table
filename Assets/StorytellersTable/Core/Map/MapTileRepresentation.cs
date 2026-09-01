@@ -67,33 +67,34 @@ namespace Assets.StorytellersTable.Core.Map
         }
 
         /// <summary>
-        /// Return's a list of <paramref name="datas"/> with the HexCoord <paramref name="hexCoord"/>, 
+        /// Return's a list of <paramref name="result"/> with the HexCoord <paramref name="hexCoord"/>, 
         /// from a range of layers, between [<paramref name="max"/>, <paramref name="min"/>].
         /// </summary>
         /// 
         /// <remarks>
-        /// <paramref name="datas"/> will be sorted in descending order based on its layer.
+        /// <paramref name="result"/> will be sorted in descending order based on its layer.
         /// </remarks>
         /// <param name="hexCoord"></param>
-        /// <param name="datas"></param>
-        public void GetTileDataStack(HexCoord hexCoord, out List<TileData> datas, int max = int.MaxValue, int min = int.MinValue)
+        /// <param name="result"></param>
+        public void GetTileDataStack(HexCoord hexCoord, out List<TileData> result, int max = int.MaxValue, int min = int.MinValue)
         {
-            datas = new();
+            result = new();
 
-            // TODO: need something to set the search range if the `max` and `min` aren't set; use the existing layers in the dict to set the search range
+            // Define better `min` and `max` bounds
+            if (max == int.MaxValue && HighestLayer(out Layer maxLayer))
+                max = maxLayer.Val;
+            if (min == int.MinValue && LowestLayer(out Layer minLayer))
+                min  = minLayer.Val;
 
-            for (int layerVal = min; layerVal <= max; layerVal++)
+            // Go through each layer (top to bottom)
+            for (int i = max; i >= min; i--)
             {
-                Layer layer = new (layerVal);
+                Layer layer = new Layer(i);
+
                 // try to get the layer's tile data
-                if (dictTileDatas.TryGetValue(layer, out Dictionary<HexCoord, TileData> dict))
-                {
-                    // get the tile data if it exists
-                    if (dict.TryGetValue(hexCoord, out TileData tileData))
-                        datas.Add(tileData);
-                }
+                if (TryGet(layer, hexCoord, out TileData data))
+                    result.Add(data);
             }
-            datas.Reverse();
         }
 
         #region Add/Remove/Update
@@ -108,6 +109,9 @@ namespace Assets.StorytellersTable.Core.Map
         /// <param name="data"></param>
         public void AddTile(TileData data)
         {
+            if (data is null)
+                return;
+
             Layer layer = data.mapLayer;
             if (!dictTileDatas.ContainsKey(layer))
                 dictTileDatas[layer] = new();
@@ -116,6 +120,8 @@ namespace Assets.StorytellersTable.Core.Map
 
         public void AddTiles(UpdateMapInfoPackage package)
         {
+            package.info.RemoveWhere(hexCoord => hexCoord is null);
+
             foreach (TileData data in package.info)
                 AddTile(data);
         }
@@ -160,6 +166,9 @@ namespace Assets.StorytellersTable.Core.Map
         
         public void UpdateTile(TileData data)
         {
+            if (data is null)
+                return;
+
             Layer layer = data.mapLayer;
             if (!EntryExists(data))
                 return;
@@ -168,6 +177,8 @@ namespace Assets.StorytellersTable.Core.Map
 
         public void UpdateTiles(UpdateMapInfoPackage package)
         {
+            package.info.RemoveWhere(hexCoord => hexCoord is null);
+
             foreach (TileData data in package.info)
                 UpdateTile(data);
         }
@@ -258,6 +269,38 @@ namespace Assets.StorytellersTable.Core.Map
                 size += value.Count;
             }
             return size;
+        }
+
+        public bool LowestLayer(out Layer layer)
+        {
+            layer = null;
+            GetLayers(out List<Layer> layers);
+
+            if (layers.Count > 0)
+            {
+                layers.Sort((a, b) => a.CompareTo(b));  // ascending
+                layer = layers[0];
+                DebugOut.Log(this, $"lowest: {layer.Val}");
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool HighestLayer(out Layer layer)
+        {
+            layer = null;
+            GetLayers(out List<Layer> layers);
+
+            if (layers.Count > 0)
+            {
+                layers.Sort((a, b) => b.CompareTo(a));  // descending
+                layer = layers[0];
+                DebugOut.Log(this, $"highest: {layer.Val}");
+                return true;
+            }
+
+            return false;
         }
     }
 }
