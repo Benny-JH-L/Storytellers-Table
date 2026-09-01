@@ -4,7 +4,6 @@ using StorytellersTable.Map;
 using StorytellersTable.Utility.Log;
 using StorytellersTable.Utility.Printer;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -22,7 +21,8 @@ namespace StorytellersTable
 
         // Specific for mode type
         public uint radius;     // radial & draw select
-        public AreaEditData areaSelectData; // area select
+        //public AreaSelectPayload areaSelectPayload; // area select
+        public AreaSelectionContainer areaSelctContainer;   // area select NOT USED
 
         public static GridSelectorPayload Copy(GridSelectorPayload payload)
         {
@@ -35,7 +35,8 @@ namespace StorytellersTable
                 layerRange = payload.layerRange,
                 layerFocus = payload.layerFocus,
                 radius = payload.radius,
-                areaSelectData = payload.areaSelectData
+                //areaSelectPayload = payload.areaSelectPayload
+                areaSelctContainer = payload.areaSelctContainer
             };
             return copy;
         }
@@ -49,7 +50,8 @@ namespace StorytellersTable
                 $"layerRange: {layerRange}\n" +
                 $"layerFocus: {layerFocus}\n" +
                 $"radius: {radius}\n" +
-                $"areaSelectData: {areaSelectData}\n";
+                //$"areaSelectData: {areaSelectPayload}\n";
+                $"areaSelectData: {areaSelctContainer}\n";
         }
     }
 
@@ -129,7 +131,7 @@ namespace StorytellersTable
         {
             layerResult = default;
             hexCoordResult = default;
-
+            
             Ray ray = camera.ScreenPointToRay(Mouse.current.position.ReadValue());
 
             // Ignore rays parallel to horizontal layer planes (D.y == 0)
@@ -205,24 +207,36 @@ namespace StorytellersTable
             tileDataResult = new();
             pickedHexCoords = new();
 
+            // Based on the selection mode, get initial hex coords
+            HexCoord initialCoord = payload.initialHexCoord;
+            HashSet<HexCoord> initialCoordSet = new() { initialCoord };
+            //AreaSelectPayload areaPayload = payload.areaSelectPayload;
+            AreaSelectionContainer areaContainer = payload.areaSelctContainer;
+
             if (!Validate(payload))
             {
                 ErrorOut.Log(this, "GridSelectorPayload invalid");
+
+                //if (payload.initialLayer is not null && payload.mapTileRepresentation is not null)
+                //{
+                //    payload.mapTileRepresentation.TryGet(payload.initialLayer, payload.initialHexCoord, out var data);
+                //    tileDataResult.Add(data);
+                //}
+
                 return false;
             }
             //DebugOut.Log(this, $"paylod used: {payload}");
 
-            // Based on the selection mode, get initial hex coords
-            HexCoord initialCoord = payload.initialHexCoord;
-            HashSet<HexCoord> initialCoordSet = new() { initialCoord };
+            MapTileRepresentation tileRep = payload.mapTileRepresentation;
+
             switch (payload.mode)
             {
                 case SelectModeTypes.radialSelect:
                     HexMath.GetHexRingArea(initialCoord, (int)payload.radius, initialCoordSet);
                     break;
                 case SelectModeTypes.areaSelect:
-                    WarningOut.Log(this, "area select not implemented");
-                    //HexMath.GetAreaAxial();
+                //    HexMath.GetAreaAxial(areaPayload.Start, areaPayload.End, initialCoordSet);
+                // TODO: do i move stuff from `area selection container` to here...
                     break;
                 case SelectModeTypes.drawSelect:
                     HexMath.GetHexRingArea(initialCoord, (int)payload.radius, initialCoordSet);
@@ -244,18 +258,14 @@ namespace StorytellersTable
             //Printer.Print(coordResult.ToList(), "after: ");  // debug
 
             // Get tile data's if they exist
-            MapTileRepresentation tileRep = payload.mapTileRepresentation;
             foreach (HexCoord coord in pickedHexCoords)
             {
                 if (tileRep.TryGet(payload.initialLayer, coord, out TileData data))
-                {
                     tileDataResult.Add(data);
-                }
             }
 
             return true;
         }
-
 
         /// <summary>
         /// Filters the <paramref name="set"/> based on if a hexcoord exists in <paramref name="mapTileRep"/>, regardless of the layer.
@@ -301,6 +311,12 @@ namespace StorytellersTable
 
             if (payload.initialLayer is null)
                 return false;
+
+            //if (payload.mode == SelectModeTypes.areaSelect)
+            //{
+            //    if (!payload.areaSelectPayload.IsValid())
+            //        return false;
+            //}
 
             return true;
         }

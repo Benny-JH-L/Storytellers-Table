@@ -8,27 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace StorytellersTable.Campaign.Modes
 {
-    /// <summary>
-    /// Stores data to track the state of area mode
-    /// </summary>
-    [Serializable]
-    public class AreaEditData // move to GridSelectorPayload? -> and make as struct?
-    {
-        public HexCoord AreaEditStart { get; set; }
-        public bool startDefined; // states if `AreaPlaceStart` has been set
-
-        public AreaEditData()
-        {
-            startDefined = false;
-        }
-    }
-
     /// <summary>
     /// Encapsulates behavior while modifying the map tiles; layout coordinates, layered tile placement, and geometry.
     /// </summary>
@@ -47,8 +33,9 @@ namespace StorytellersTable.Campaign.Modes
         private TemporaryTileContainer temporaryTileContainer;  // utilized by placement mode
         private TileEditContainer TileEditMode => TileEditContainer.instance;   // handles UI for tile data editing by the user
         public readonly ModeContainer editModes = new ModeContainer();
-        private readonly AreaEditData areaEditData = new AreaEditData();
-
+        //private readonly AreaEditData areaEditData = new AreaEditData();
+        private AreaSelectPayload areaSelectPayload;
+        private AreaSelectionContainer areaSelectionContainer;
         
         [SerializeField] MapEditorUIManager mapEditorUI;    // map editor's own UI
 
@@ -60,7 +47,7 @@ namespace StorytellersTable.Campaign.Modes
         [Range(0, 5)]
         [SerializeField] public uint layerRange = 2;
         [SerializeField] public bool layerFocusOn = false;      // toggle to focus editing/placeing on a specific layer (overrides surfaceFocusOn)
-        [SerializeField] public bool surfaceFocusOn = false;    // toggle to focus selecting the surface for edit/remove (this is always on for dynamic tile placement)
+        [SerializeField] public bool surfaceFocusOn = false;    // toggle to focus selecting the surface for edit/remove (this is always on for dynamic tile placement) -> deprecate
         [SerializeField] private bool selectOn = true;          // selection/deselction state
 
         #endregion values edit by the UI end/keybinds ----
@@ -86,14 +73,21 @@ namespace StorytellersTable.Campaign.Modes
             temporaryTileContainer = new GameObject("TmpTileContainer", typeof(TemporaryTileContainer)).GetComponent<TemporaryTileContainer>();
             temporaryTileContainer.transform.SetParent(this.transform, false);
 
+            areaSelectionContainer = new(ActiveMapData.mapTileData);
+
             // Add callback to toggle radial, area, and draw tile placements
             _inputMap.Selection.ToggleSingle.performed += editModes.ToggleSingleSelect;
+            _inputMap.Selection.ToggleSingle.performed += ResetAreaSelect;
             _inputMap.Selection.ToggleRadial.performed += editModes.ToggleRadialSelect;
+            _inputMap.Selection.ToggleRadial.performed += ResetAreaSelect;
             _inputMap.Selection.ToggleArea.performed += editModes.ToggleAreaSelect;
             _inputMap.Selection.ToggleDraw.performed += editModes.ToggleDrawSelect;
+            _inputMap.Selection.ToggleDraw.performed += ResetAreaSelect;
             _inputMap.Selection.ToggleDeselect.performed += ToggleSelect;
             _inputMap.Selection.ClearSelection.performed += ClearConfirmedSelection;
-            
+            _inputMap.Selection.ClearSelection.performed += ResetAreaSelect;
+
+
             // Add callbacks to toggle between tile/label edit, remove, and placement
             _inputMap.Edit.ToggleTileMode.performed += editModes.ToggleTileMode;
             _inputMap.Edit.ToggleTileMode.performed += ClearConfirmedSelection;
@@ -119,14 +113,16 @@ namespace StorytellersTable.Campaign.Modes
             selectionContainer.Init();
             temporaryTileContainer.Clear();
 
+            ResetAreaSelect();
+
             _inputMap.Enable();
         }
 
         void ICampaignMode.Exit()
         {
             _inputMap.Disable();    // disable input for this mode
-
             TileEditMode.Disable();
+            ResetAreaSelect();
 
             // Note: the constant destruction and creation can lag down the game once the UI becomes much more developed
             Destroy(mapEditorUI.gameObject);
@@ -135,6 +131,7 @@ namespace StorytellersTable.Campaign.Modes
             selectionContainer.ClearUnconfirmed();
             selectionContainer.ClearConfirmed();
             temporaryTileContainer.Clear();
+
         }
 
         void ICampaignMode.UpdateMode()
@@ -152,19 +149,19 @@ namespace StorytellersTable.Campaign.Modes
 
             // Create the grid selector's payload
             GridSelectorPayload gridSelecPayload = new() {
-                mode = editModes.SelectionMode,
+                mode = editModes.SelectionMode == SelectModeTypes.areaSelect ? SelectModeTypes.singleSelect : editModes.SelectionMode,  // area selection will be handleed with single select + another technique
                 layerRange = layerRange,
                 radius = (editModes.SelectionMode == SelectModeTypes.radialSelect) ? ModeManager.mapEditSettings.radius : ModeManager.mapEditSettings.drawRadius - 1,
                 mapTileRepresentation = ActiveMapData.mapTileData,
-                filterWithMapRep = true
+                filterWithMapRep = true,
+                //areaSelectPayload = areaSelectPayload
+                areaSelctContainer = areaSelectionContainer
             };
 
-            // TODO: area select stuff here...
-
             // Results of gridselector
-            HashSet<TileData> tileDataResult;
+            HashSet <TileData> tileDataResult;
             HashSet<HexCoord> coordResult;
-            bool pickSuccessful = false;
+            GridSelectorPayload updatedPayload = GridSelectorPayload.Copy(gridSelecPayload);
 
             // pick on a specific layer
             if (layerFocusOn)
@@ -181,79 +178,86 @@ namespace StorytellersTable.Campaign.Modes
                 // convert the world position found to hex coord
                 gridSelecPayload.initialHexCoord = HexMath.WorldToAxial(ray.GetPoint(dist));
                 gridSelecPayload.initialLayer = new Layer(activeLayer);
+
                 // placing tiles in unoccupied spaces on a fixed layer, don't filter out results with map data
-                gridSelecPayload.filterWithMapRep = (editModes.IsTilePlaceOn()) ? false : true;
+                gridSelecPayload.filterWithMapRep = editModes.IsTilePlaceOn() ? false : true;
 
-                pickSuccessful = gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult);
-
-                if (!pickSuccessful)
-                    return;
-
-                // Generate tiles for placement
-                if (editModes.IsTilePlaceOn())
+                if (gridSelector.Pick(gridSelecPayload, out tileDataResult, out coordResult))
                 {
-                    tileDataResult.Clear();
-                    var tileRep = gridSelecPayload.mapTileRepresentation;
-                    Layer focusLayer = gridSelecPayload.initialLayer;
-
-                    //Printer.Print(coordResult, "pick result:");   // debug
-                    // Generate tiles
-                    foreach (HexCoord hexCoord in coordResult)
+                    // Generate tiles for placement
+                    if (editModes.IsTilePlaceOn())
                     {
-                        // don't generate tile if one exists at the map's position already
-                        if (tileRep.EntryExists(focusLayer, hexCoord))
-                            continue;
+                        tileDataResult.Clear();
+                        var tileRep = gridSelecPayload.mapTileRepresentation;
+                        Layer focusLayer = gridSelecPayload.initialLayer;
 
-                        // add generated tile
-                        tileDataResult.Add(new TileData(hexCoord, focusLayer, placementMaterialId));
+                        //Printer.Print(coordResult, "pick result:");   // debug
+                        // Generate tiles
+                        foreach (HexCoord hexCoord in coordResult)
+                        {
+                            // don't generate tile if one exists at the map's position already
+                            if (tileRep.EntryExists(focusLayer, hexCoord))
+                                continue;
+
+                            // add generated tile
+                            tileDataResult.Add(new TileData(hexCoord, focusLayer, placementMaterialId));
+                        }
+                        //Printer.Print(tileDataResult, "placement: ");  // debug
                     }
-                    //Printer.Print(tileDataResult, "placement: ");  // debug
                 }
             }
-            // pick with camera (dynamic)
+            // pick with camera (dynamic raycast)
             else
             {
-                pickSuccessful = gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult, out GridSelectorPayload updatedPayload);
-                
-                if (!pickSuccessful)
-                    return;
-
-                // Get surface tiles
-                if (surfaceFocusOn || editModes.IsTilePlaceOn())
+                if (gridSelector.PickWithCamera(gridSelecPayload, Camera.main, out tileDataResult, out coordResult, out updatedPayload))
                 {
-                    // We don't care what the grid selector chose as we will use `coordResult` to get the 'top most' tiles
-                    tileDataResult.Clear();
-
-                    var tileRep = updatedPayload.mapTileRepresentation;
-                    int layerMax = updatedPayload.initialLayer.Val + (int)updatedPayload.layerRange;
-                    int layerMin = updatedPayload.initialLayer.Val - (int)updatedPayload.layerRange;
-
-                    // Get tile data based on HexGridSelector output
-                    foreach (HexCoord hexCoord in coordResult)
+                    // Get surface tiles
+                    if (surfaceFocusOn || editModes.IsTilePlaceOn())
                     {
-                        tileRep.GetTileDataStack(hexCoord, out List<TileData> tileDatas, layerMax, layerMin);
+                        // We don't care what the grid selector chose as we will use `coordResult` to get the 'top most' tiles
+                        tileDataResult.Clear();
 
-                        // the first element will be the top most tile betwen the min and max
-                        if (tileDatas.Count > 0)
-                            tileDataResult.Add(tileDatas[0]);
+                        var tileRep = updatedPayload.mapTileRepresentation;
+                        int layerMax = updatedPayload.initialLayer.Val + (int)updatedPayload.layerRange;
+                        int layerMin = updatedPayload.initialLayer.Val - (int)updatedPayload.layerRange;
+
+                        // Get tile data based on HexGridSelector output
+                        foreach (HexCoord hexCoord in coordResult)
+                        {
+                            tileRep.GetTileDataStack(hexCoord, out List<TileData> tileDatas, layerMax, layerMin);
+
+                            // the first element will be the top most tile betwen the min and max
+                            if (tileDatas.Count > 0)
+                                tileDataResult.Add(tileDatas[0]);
+                        }
+                    }
+
+                    // Update the TileData for placement mode so that new tiles are placed atop of existing ones
+                    if (editModes.IsTilePlaceOn())
+                    {
+                        HashSet<TileData> tmp = new();
+                        foreach (TileData tileData in tileDataResult)
+                            tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialId));
+
+                        // Add the new results
+                        tileDataResult.Clear();         // clear tmp data
+                        tileDataResult.UnionWith(tmp);  // add the actual data
                     }
                 }
+            }
 
-                // Update the TileData for placement mode so that new tiles are placed atop of existing ones
-                if (editModes.IsTilePlaceOn())
-                {
-                    HashSet<TileData> tmp = new();
-                    foreach (TileData tileData in tileDataResult)
-                        tmp.Add(new TileData(tileData.hexCoord, new Layer(tileData.mapLayer.Val + 1), placementMaterialId));
-                    
-                    // Add the new results
-                    tileDataResult.Clear();         // clear tmp data
-                    tileDataResult.UnionWith(tmp);  // add the actual data
-                }
+            // the tile the mouse is hovering over
+            TileData currentTile = tileDataResult.Count > 0 ? tileDataResult.ToList()[0] : null;
+
+            // set an end for real time visual update, for area selection
+            if (editModes.IsAreaOn() && areaSelectionContainer.Start is not null && currentTile is not null)
+            {
+                areaSelectionContainer.SetEnd(currentTile, layerFocusOn, out tileDataResult); // set a `end` to update visuals, then override the tiles we want to render
             }
 
             // Create payloads from gridselector
-            UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage() { info = tileDataResult };
+            UpdateMapInfoPackage mapInfoPackage = new UpdateMapInfoPackage(){ info = tileDataResult };
+
 
             #region handle select/deselect states
             // Handle select state
@@ -308,40 +312,57 @@ namespace StorytellersTable.Campaign.Modes
             {
                 if (!selectOn)
                 {
-                    selectionContainer.RemoveFromConfirmed(mapInfoPackage);
-                    return;
+                    if (editModes.SelectionMode != SelectModeTypes.areaSelect)
+                    {
+                        selectionContainer.RemoveFromConfirmed(mapInfoPackage);
+                        return;
+                    }
+                    // only confirm deselection once an end was selected
+                    else if (areaSelectionContainer.End is not null)
+                    {
+                        areaSelectionContainer.SetEnd(currentTile, layerFocusOn, out HashSet<TileData> areaResult);
+                        mapInfoPackage.info = areaResult;
+                        selectionContainer.RemoveFromConfirmed(mapInfoPackage);
+                        ResetAreaSelect();
+                        return;
+                    }
                 }
 
-                // Check for tile placement
-                if (editModes.IsTilePlaceOn())
+                // Two-Click Area Selection Handling
+                if (editModes.IsAreaOn())
                 {
-                    // Area mode check
-                    if (editModes.SelectionMode == SelectModeTypes.areaSelect)
+                    // Click 1: Starting coord
+                    if (areaSelectionContainer.Start is null && currentTile is not null)
                     {
-                        //// Set the starting position
-                        //if (!areaEditData.startDefined)
-                        //{
-                        //    areaEditData.AreaEditStart = mouseHexCoord;
-                        //    areaEditData.startDefined = true;
-                        //}
-                        //// Deselect the start if clicked again
-                        //else if (areaEditData.startDefined && areaEditData.AreaEditStart == mouseHexCoord)
-                        //    areaEditData.startDefined = false;
-                        //// Starting position selected, and left mouse was clicked again, ask to update confirmed tiles.
-                        //else
-                        //{
-                        //    PlaceTmpTiles();
-                        //    areaEditData.startDefined = false;
-                        //}
+                        areaSelectionContainer.SetStart(currentTile);
+                        //DebugOut.Log(this, $"area start: {areaSelectionContainer.Start}, start layer: {areaSelectionContainer.Start.mapLayer}");
                     }
-                    else
+                    // Click 2 (On Start Point): Cancel selection
+                    else if (areaSelectionContainer.Start == areaSelectionContainer.End)
                     {
-                        PlaceTmpTiles();
+                        ResetAreaSelect();
+                        //DebugOut.Log(this, "area reset");
+                    }
+                    // Click 2 (On Different Point): Confirm area bounds
+                    else if (currentTile is not null)
+                    {
+                        areaSelectionContainer.SetEnd(currentTile, layerFocusOn, out HashSet<TileData> areaResult);
+                        //DebugOut.Log(this, $"area start: {areaSelectionContainer.Start}, end: {areaSelectionContainer.End}\nstart layer: {areaSelectionContainer.Start.mapLayer}, end layer: {areaSelectionContainer.End.mapLayer}");
+
+                        if (editModes.IsTilePlaceOn())
+                            PlaceTmpTiles();
+                        else
+                            selectionContainer.UpdateConfirmed();
+
+                        ResetAreaSelect();
                     }
                 }
                 else
                 {
-                    selectionContainer.UpdateConfirmed();
+                    if (editModes.IsTilePlaceOn())
+                        PlaceTmpTiles();
+                    else
+                        selectionContainer.UpdateConfirmed();
                 }
             }
             #endregion
@@ -459,6 +480,8 @@ namespace StorytellersTable.Campaign.Modes
             if (prevEditMode == editModes.EditMode && editModes.IsEditingOn())
                 return;
 
+            ResetAreaSelect();
+
             // Switch to editing mode if same mode is selected
             if (prevEditMode == editModes.EditMode || editModes.IsEditingOn())
             {
@@ -495,8 +518,6 @@ namespace StorytellersTable.Campaign.Modes
             selectionContainer.ClearConfirmed();
         }
 
-        #region Input Action Callbacks
-
         /// <summary>
         /// Callback to clear the confirmed tile selection.
         /// </summary>
@@ -506,6 +527,17 @@ namespace StorytellersTable.Campaign.Modes
             ClearConfirmedSelection();
         }
 
+        private void ResetAreaSelect()
+        {
+            //areaSelectPayload = new AreaSelectPayload();
+            areaSelectionContainer.Reset();
+        }
+
+        private void ResetAreaSelect(InputAction.CallbackContext context)
+        {
+            ResetAreaSelect();
+        }
+
         /// <summary>
         /// Toggles selection, (either select on or deselect on).
         /// </summary>
@@ -513,11 +545,10 @@ namespace StorytellersTable.Campaign.Modes
         private void ToggleSelect(InputAction.CallbackContext context)
         {
             selectOn = !selectOn;
+            ResetAreaSelect();
             DebugOut.Log(this, "Selection: " + selectOn + " (False means deselect is on)");
         }
-        // functions for Input Action call backs...
 
-        #endregion
 
         #region misc: LayoutMap()
 
